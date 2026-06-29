@@ -1,32 +1,26 @@
-import Link from "next/link";
+"use client";
+
+import { useBudget } from "@/context/BudgetContext";
 import DashboardHeader from "@/components/DashboardHeader";
 import SummaryCard from "@/components/SummaryCard";
 import CategoryList from "@/components/CategoryList";
 import TransactionList from "@/components/TransactionList";
-
-const categories = [
-  { name: "Groceries", budget: 600, spent: 248 },
-  { name: "Gas", budget: 250, spent: 92 },
-  { name: "Eating Out", budget: 200, spent: 141 },
-  { name: "Bills", budget: 1800, spent: 1800 },
-];
-
-const transactions = [
-  { name: "Walmart", category: "Groceries", amount: 82.43 },
-  { name: "Shell", category: "Gas", amount: 46.1 },
-  { name: "Amazon", category: "Shopping", amount: 27.99 },
-];
+import AppSidebar from "@/components/AppSidebar";
 
 export default function Dashboard() {
+  const { categories, transactions } = useBudget();
+
   const income = 5000;
-  const spent = categories.reduce((total, category) => total + category.spent, 0);
+  const spent = categories.reduce(
+    (total, category) => total + category.spent,
+    0
+  );
   const remaining = income - spent;
-
   return (
-    <main className="min-h-screen bg-zinc-950 text-white">
-      <DashboardHeader />
+    <main className="flex min-h-screen bg-zinc-950 text-white">
+      <AppSidebar />
 
-      <section className="mx-auto max-w-6xl px-6 py-10">
+      <section className="flex-1 px-6 py-10">
         <p className="text-zinc-400">Good evening, Jacob 👋</p>
 
         <h1 className="mt-2 text-4xl font-bold">Dashboard</h1>

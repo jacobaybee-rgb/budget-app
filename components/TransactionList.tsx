@@ -1,8 +1,4 @@
-type Transaction = {
-  name: string;
-  category: string;
-  amount: number;
-};
+import { Transaction } from "@/types/transaction";
 
 type TransactionListProps = {
   transactions: Transaction[];

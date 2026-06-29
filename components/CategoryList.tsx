@@ -1,8 +1,4 @@
-type Category = {
-  name: string;
-  budget: number;
-  spent: number;
-};
+import { Category } from "@/types/category";
 
 type CategoryListProps = {
   categories: Category[];
@@ -22,7 +18,7 @@ export default function CategoryList({ categories }: CategoryListProps) {
           );
 
           return (
-            <div key={category.name}>
+            <div key={category.id}>
               <div className="flex justify-between">
                 <p className="font-medium">{category.name}</p>
                 <p className="text-zinc-400">${left} left</p>
