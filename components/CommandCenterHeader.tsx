@@ -35,6 +35,7 @@ export default function CommandCenterHeader() {
     <section
       className={`overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br ${background} p-8 shadow-2xl`}
     >
+    
       <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-sm uppercase tracking-widest text-blue-300">
