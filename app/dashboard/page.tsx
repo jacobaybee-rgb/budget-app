@@ -1,7 +1,6 @@
 "use client";
 
 import { useBudget } from "@/context/BudgetContext";
-import DashboardHeader from "@/components/DashboardHeader";
 import SummaryCard from "@/components/SummaryCard";
 import CategoryList from "@/components/CategoryList";
 import TransactionList from "@/components/TransactionList";
@@ -11,10 +10,12 @@ export default function Dashboard() {
   const { categories, transactions } = useBudget();
 
   const income = 5000;
-  const spent = categories.reduce(
-    (total, category) => total + category.spent,
+
+  const spent = transactions.reduce(
+    (total, transaction) => total + transaction.amount,
     0
   );
+
   const remaining = income - spent;
   return (
     <main className="flex min-h-screen bg-zinc-950 text-white">
@@ -41,8 +42,9 @@ export default function Dashboard() {
             <SummaryCard label="Safe to Spend" value={`$${remaining.toLocaleString()}`} />
         </div>
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-2">
-          <CategoryList categories={categories} transactions={transactions} />          <TransactionList transactions={transactions} />
+       <div className="mt-8 grid gap-8 lg:grid-cols-2">
+          <CategoryList categories={categories} transactions={transactions} />
+          <TransactionList transactions={transactions} />
         </div>
       </section>
     </main>
