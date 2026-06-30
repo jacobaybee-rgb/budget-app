@@ -4,6 +4,7 @@ import { useBudget } from "@/context/BudgetContext";
 import CategoryList from "@/components/CategoryList";
 import TransactionList from "@/components/TransactionList";
 import AppLayout from "@/components/AppLayout";
+import CommandCenterHeader from "@/components/CommandCenterHeader";
 
 export default function Dashboard() {
   const { categories, transactions } = useBudget();
@@ -19,17 +20,7 @@ export default function Dashboard() {
   return (
     <AppLayout>
       <div className="flex flex-col gap-8">
-        <div>
-          <p className="text-sm uppercase tracking-widest text-blue-400">
-            Command Center
-          </p>
-          <h1 className="mt-2 text-4xl font-bold tracking-tight">
-            Good evening, Jacob 👋
-          </h1>
-          <p className="mt-2 text-zinc-400">
-            Here&apos;s where your money stands this month.
-          </p>
-        </div>
+        <CommandCenterHeader />
         
         <section className="rounded-3xl border border-blue-500/40 bg-gradient-to-br from-blue-950 via-zinc-950 to-blue-900/40 p-8 shadow-2xl shadow-blue-950/40">
           <div className="text-center">
