@@ -3,6 +3,7 @@
 import AppSidebar from "@/components/AppSidebar";
 import { useBudget } from "@/context/BudgetContext";
 import { useState } from "react";
+import MobileNav from "@/components/MobileNav";
 
 export default function CategoriesPage() {
   const { categories, addCategory } = useBudget();
@@ -101,6 +102,7 @@ setBudget("");
           ))}
         </div>
       </section>
+      <MobileNav />
     </main>
   );
 }

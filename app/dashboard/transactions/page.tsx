@@ -3,6 +3,7 @@
 import AppSidebar from "@/components/AppSidebar";
 import { useBudget } from "@/context/BudgetContext";
 import { useState } from "react";
+import MobileNav from "@/components/MobileNav";
 
 export default function TransactionsPage() {
   const { categories, transactions, addTransaction } = useBudget();
@@ -118,6 +119,7 @@ export default function TransactionsPage() {
           ))}
         </div>
       </section>
+      <MobileNav />
     </main>
   );
 }
