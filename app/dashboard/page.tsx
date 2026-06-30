@@ -5,6 +5,7 @@ import SummaryCard from "@/components/SummaryCard";
 import CategoryList from "@/components/CategoryList";
 import TransactionList from "@/components/TransactionList";
 import AppSidebar from "@/components/AppSidebar";
+import MobileNav from "@/components/MobileNav";
 
 export default function Dashboard() {
   const { categories, transactions } = useBudget();
@@ -47,6 +48,7 @@ export default function Dashboard() {
           <TransactionList transactions={transactions} />
         </div>
       </section>
+      <MobileNav />
     </main>
   );
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import MobileNav from "@/components/MobileNav";
 
 export default function Home() {
   return (
@@ -24,6 +25,7 @@ export default function Home() {
           Start Budgeting Now
         </Link>
       </section>
+      <MobileNav />
     </main>
   );
 }
