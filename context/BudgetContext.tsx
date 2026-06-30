@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { sampleCategories, sampleTransactions } from "@/data/sampleData";
 import { Category } from "@/types/category";
 import { Transaction } from "@/types/transaction";
@@ -18,6 +18,27 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
   const [categories, setCategories] = useState<Category[]>(sampleCategories);
   const [transactions, setTransactions] =
     useState<Transaction[]>(sampleTransactions);
+
+  useEffect(() => {
+    const savedCategories = localStorage.getItem("categories");
+    const savedTransactions = localStorage.getItem("transactions");
+
+    if (savedCategories) {
+      setCategories(JSON.parse(savedCategories));
+    }
+
+    if (savedTransactions) {
+      setTransactions(JSON.parse(savedTransactions));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("categories", JSON.stringify(categories));
+  }, [categories]);
+
+  useEffect(() => {
+    localStorage.setItem("transactions", JSON.stringify(transactions));
+  }, [transactions]);
 
   function addCategory(category: Category) {
     setCategories((currentCategories) => [...currentCategories, category]);

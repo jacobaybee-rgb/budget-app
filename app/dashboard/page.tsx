@@ -42,8 +42,7 @@ export default function Dashboard() {
         </div>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-2">
-          <CategoryList categories={categories} />
-          <TransactionList transactions={transactions} />
+          <CategoryList categories={categories} transactions={transactions} />          <TransactionList transactions={transactions} />
         </div>
       </section>
     </main>

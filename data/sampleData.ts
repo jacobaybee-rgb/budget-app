@@ -2,10 +2,10 @@ import { Category } from "@/types/category";
 import { Transaction } from "@/types/transaction";
 
 export const sampleCategories: Category[] = [
-  { id: "groceries", name: "Groceries", budget: 600, spent: 248 },
-  { id: "gas", name: "Gas", budget: 250, spent: 92 },
-  { id: "eating-out", name: "Eating Out", budget: 200, spent: 141 },
-  { id: "bills", name: "Bills", budget: 1800, spent: 1800 },
+  { id: "groceries", name: "Groceries", budget: 600 },
+  { id: "gas", name: "Gas", budget: 250 },
+  { id: "eating-out", name: "Eating Out", budget: 200 },
+  { id: "bills", name: "Bills", budget: 1800 },
 ];
 
 export const sampleTransactions: Transaction[] = [

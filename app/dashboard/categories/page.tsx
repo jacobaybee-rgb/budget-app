@@ -40,7 +40,6 @@ addCategory({
   id: crypto.randomUUID(),
   name: trimmedName,
   budget: budgetNumber,
-  spent: 0,
 });
 
 setName("");
@@ -91,12 +90,12 @@ setBudget("");
         <div className="mt-8 max-w-xl space-y-4">
           {categories.map((category) => (
             <div
-              key={category.name}
+              key={category.id}
               className="rounded-xl border border-zinc-800 bg-zinc-900 p-4"
             >
-              <p className="font-bold">{category.name}</p>
+              <p className="text-lg font-bold text-white">{category.name}</p>
               <p className="text-zinc-400">
-                ${category.spent} spent of ${category.budget}
+                Monthly budget: ${category.budget}
               </p>
             </div>
           ))}

@@ -1,19 +1,29 @@
 import { Category } from "@/types/category";
+import { Transaction } from "@/types/transaction";
+import {
+  getCategoryRemaining,
+  getCategorySpent,
+} from "@/lib/budget";
 
 type CategoryListProps = {
   categories: Category[];
+  transactions: Transaction[];
 };
 
-export default function CategoryList({ categories }: CategoryListProps) {
+export default function CategoryList({
+  categories,
+  transactions,
+}: CategoryListProps) {
   return (
     <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
       <h2 className="text-2xl font-bold">Categories</h2>
 
       <div className="mt-6 space-y-5">
         {categories.map((category) => {
-          const left = category.budget - category.spent;
+          const spent = getCategorySpent(category, transactions);
+          const left = getCategoryRemaining(category, transactions);
           const percent = Math.min(
-            Math.round((category.spent / category.budget) * 100),
+            Math.round((spent / category.budget) * 100),
             100
           );
 
@@ -32,7 +42,7 @@ export default function CategoryList({ categories }: CategoryListProps) {
               </div>
 
               <p className="mt-1 text-sm text-zinc-500">
-                ${category.spent} of ${category.budget}
+                ${spent} of ${category.budget}
               </p>
             </div>
           );
