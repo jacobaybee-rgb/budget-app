@@ -1,9 +1,8 @@
 "use client";
 
-import AppSidebar from "@/components/AppSidebar";
 import { useBudget } from "@/context/BudgetContext";
 import { useState } from "react";
-import MobileNav from "@/components/MobileNav";
+import AppLayout from "@/components/AppLayout"; 
 
 export default function CategoriesPage() {
   const { categories, addCategory } = useBudget();
@@ -47,10 +46,7 @@ setName("");
 setBudget("");
   }
   return (
-    <main className="flex min-h-screen bg-zinc-950 text-white">
-      <AppSidebar />
-
-      <section className="flex-1 px-6 py-24">
+    <AppLayout>
         <h1 className="text-4xl font-bold">Categories</h1>
         <p className="mt-2 text-zinc-400">
           Create and manage your budget categories.
@@ -101,8 +97,6 @@ setBudget("");
             </div>
           ))}
         </div>
-      </section>
-      <MobileNav />
-    </main>
+    </AppLayout>
   );
 }

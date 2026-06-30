@@ -1,9 +1,8 @@
 "use client";
 
-import AppSidebar from "@/components/AppSidebar";
 import { useBudget } from "@/context/BudgetContext";
 import { useState } from "react";
-import MobileNav from "@/components/MobileNav";
+import AppLayout from "@/components/AppLayout";
 
 export default function TransactionsPage() {
   const { categories, transactions, addTransaction } = useBudget();
@@ -45,10 +44,7 @@ export default function TransactionsPage() {
   }
 
   return (
-    <main className="flex min-h-screen bg-zinc-950 text-white">
-      <AppSidebar />
-
-      <section className="flex-1 px-6 py-24">
+    <AppLayout>
         <h1 className="text-4xl font-bold">Transactions</h1>
         <p className="mt-2 text-zinc-400">
           Add and review your spending.
@@ -118,8 +114,6 @@ export default function TransactionsPage() {
             </div>
           ))}
         </div>
-      </section>
-      <MobileNav />
-    </main>
+    </AppLayout>
   );
 }
