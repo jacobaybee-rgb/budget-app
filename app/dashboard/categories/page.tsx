@@ -50,7 +50,7 @@ setBudget("");
     <main className="flex min-h-screen bg-zinc-950 text-white">
       <AppSidebar />
 
-      <section className="flex-1 px-6 py-10">
+      <section className="flex-1 px-6 py-24">
         <h1 className="text-4xl font-bold">Categories</h1>
         <p className="mt-2 text-zinc-400">
           Create and manage your budget categories.

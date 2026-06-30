@@ -22,7 +22,7 @@ export default function Dashboard() {
     <main className="flex min-h-screen bg-zinc-950 text-white">
       <AppSidebar />
 
-      <section className="flex-1 px-6 py-10">
+      <section className="flex-1 px-6 py-24">
         <p className="text-zinc-400">Good evening, Jacob 👋</p>
 
         <h1 className="mt-2 text-4xl font-bold">Dashboard</h1>
