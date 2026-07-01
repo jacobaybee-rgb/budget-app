@@ -16,9 +16,14 @@ type BudgetContextType = {
   categories: Category[];
   transactions: Transaction[];
   incomeSources: IncomeSource[];
+
   addCategory: (category: Category) => void;
   addTransaction: (transaction: Transaction) => void;
   addIncomeSource: (incomeSource: IncomeSource) => void;
+
+  deleteCategory: (id: string) => void;
+  deleteTransaction: (id: string) => void;
+  deleteIncomeSource: (id: string) => void;
 };
 
 const BudgetContext = createContext<BudgetContextType | undefined>(undefined);
@@ -76,6 +81,27 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
       incomeSource,
     ]);
   }
+    function deleteCategory(id: string) {
+    setCategories((currentCategories) =>
+      currentCategories.filter((category) => category.id !== id)
+    );
+  }
+
+  function deleteTransaction(id: string) {
+    setTransactions((currentTransactions) =>
+      currentTransactions.filter(
+        (transaction) => transaction.id !== id
+      )
+    );
+  }
+
+  function deleteIncomeSource(id: string) {
+    setIncomeSources((currentIncomeSources) =>
+      currentIncomeSources.filter(
+        (incomeSource) => incomeSource.id !== id
+      )
+    );
+  }
 
   return (
     <BudgetContext.Provider
@@ -83,9 +109,14 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         categories,
         transactions,
         incomeSources,
+
         addCategory,
         addTransaction,
         addIncomeSource,
+
+        deleteCategory,
+        deleteTransaction,
+        deleteIncomeSource,
       }}
     >
       {children}

@@ -9,7 +9,22 @@ export const sampleCategories: Category[] = [
 ];
 
 export const sampleTransactions: Transaction[] = [
-  { name: "Walmart", category: "Groceries", amount: 82.43 },
-  { name: "Shell", category: "Gas", amount: 46.1 },
-  { name: "Amazon", category: "Shopping", amount: 27.99 },
+  {
+    id: "t1",
+    name: "Walmart",
+    category: "Groceries",
+    amount: 82.43,
+  },
+  {
+    id: "t2",
+    name: "Shell",
+    category: "Gas",
+    amount: 46.10,
+  },
+  {
+    id: "t3",
+    name: "Amazon",
+    category: "Shopping",
+    amount: 27.99,
+  },
 ];

@@ -5,7 +5,12 @@ import { useState } from "react";
 import AppLayout from "@/components/AppLayout";
 
 export default function TransactionsPage() {
-  const { categories, transactions, addTransaction } = useBudget();
+  const { 
+    categories, 
+    transactions, 
+    addTransaction,
+    deleteTransaction, 
+  } = useBudget();
 
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
@@ -33,6 +38,7 @@ export default function TransactionsPage() {
     }
 
     addTransaction({
+      id: crypto.randomUUID(),
       name: trimmedName,
       amount: amountNumber,
       category,
@@ -99,10 +105,10 @@ export default function TransactionsPage() {
           </button>
         </form>
 
-        <div className="mt-8 max-w-xl space-y-4">
+                <div className="mt-8 max-w-xl space-y-4">
           {transactions.map((transaction) => (
             <div
-              key={`${transaction.name}-${transaction.amount}`}
+              key={transaction.id}
               className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900 p-4"
             >
               <div>
@@ -110,10 +116,24 @@ export default function TransactionsPage() {
                 <p className="text-zinc-400">{transaction.category}</p>
               </div>
 
-              <p className="font-bold">-${transaction.amount}</p>
+              <div className="text-right">
+                <p className="font-bold">
+                  -${transaction.amount.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </p>
+
+                <button
+                  onClick={() => deleteTransaction(transaction.id)}
+                  className="mt-1 text-sm text-red-400 hover:text-red-300"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           ))}
         </div>
-    </AppLayout>
-  );
+      </AppLayout>
+    );
 }

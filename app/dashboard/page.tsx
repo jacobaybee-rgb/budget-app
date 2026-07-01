@@ -23,7 +23,7 @@ export default function Dashboard() {
     : 0;
 
   // Dynamic vibrant background
-  const { bgImage } = getTimeTheme();
+  const { bgImage, heroOverlay } = getTimeTheme();
 
   return (
     <AppLayout>
@@ -31,7 +31,7 @@ export default function Dashboard() {
       <div
         className="relative h-[300px] -mt-10 -mx-8 bg-cover bg-center"
         style={{
-          backgroundImage: `linear-gradient(to bottom, rgba(2,6,23,0.15), rgba(2,6,23,0.95)), url(${bgImage})`,
+          backgroundImage: `${heroOverlay}, url(${bgImage})`,
           backgroundPosition: "center 45%",
         }}
       >

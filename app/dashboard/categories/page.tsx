@@ -5,7 +5,7 @@ import { useState } from "react";
 import AppLayout from "@/components/AppLayout"; 
 
 export default function CategoriesPage() {
-  const { categories, addCategory } = useBudget();
+  const { categories, addCategory, deleteCategory } = useBudget();
 
   const [name, setName] = useState("");
   const [budget, setBudget] = useState("");
@@ -86,15 +86,30 @@ setBudget("");
 
         <div className="mt-8 max-w-xl space-y-4">
           {categories.map((category) => (
-            <div
-              key={category.id}
-              className="rounded-xl border border-zinc-800 bg-zinc-900 p-4"
-            >
-              <p className="text-lg font-bold text-white">{category.name}</p>
+          <div
+            key={category.id}
+            className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900 p-4"
+          >
+            <div>
+              <p className="text-lg font-bold text-white">
+                {category.name}
+              </p>
+
               <p className="text-zinc-400">
-                Monthly budget: ${category.budget}
+                Monthly budget: ${category.budget.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
               </p>
             </div>
+
+            <button
+              onClick={() => deleteCategory(category.id)}
+              className="rounded-lg bg-red-950/40 px-3 py-2 text-sm text-red-400 transition hover:bg-red-900/50 hover:text-red-300"
+            >
+              🗑 Delete
+            </button>
+          </div> 
           ))}
         </div>
     </AppLayout>
