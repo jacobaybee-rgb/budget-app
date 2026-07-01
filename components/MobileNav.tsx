@@ -21,6 +21,10 @@ export default function MobileNav() {
         >
           Income
         </Link>
+        <Link href="/dashboard/profile" className="text-zinc-300">
+          Profile
+        </Link>
+
       </div>
     </nav>
   );

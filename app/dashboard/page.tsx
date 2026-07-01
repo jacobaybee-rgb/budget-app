@@ -22,6 +22,19 @@ export default function Dashboard() {
     ? Math.min(Math.round((spent / income) * 100), 100)
     : 0;
 
+  const budgetMessage =
+    income === 0
+      ? "Add your income to unlock your monthly budget insight."
+      : spentPercent < 50
+      ? "Excellent pace. You're well ahead of budget."
+      : spentPercent < 75
+      ? "You're on track. Keep an eye on everyday spending."
+      : spentPercent < 90
+      ? "Budget is getting tight. Slow down on non-essential purchases."
+      : spentPercent < 100
+      ? "Careful — you're close to using your full monthly income."
+      : "You've spent more than your income. Time to re-evaluate spending.";
+
   // Dynamic vibrant background
   const { bgImage, heroOverlay } = getTimeTheme();
 
@@ -29,10 +42,10 @@ export default function Dashboard() {
     <AppLayout>
       {/* Top Background Hero - Mockup Style */}
       <div
-        className="relative h-[300px] -mt-10 -mx-8 bg-cover bg-center"
+        className="relative h-[325px] -mt-10 -mx-6 bg-cover bg-center"
         style={{
           backgroundImage: `${heroOverlay}, url(${bgImage})`,
-          backgroundPosition: "center 45%",
+          backgroundPosition: "center 10%",
         }}
       >
         <div className="px-8 pt-12">
@@ -55,8 +68,18 @@ export default function Dashboard() {
                     maximumFractionDigits: 2,
                   })}
                 </p>
-                <p className="text-emerald-400 mt-2">
-                  You're doing great! 💪
+                <p
+                  className={`mt-2 ${
+                    spentPercent < 50
+                      ? "text-emerald-400"
+                      : spentPercent < 75
+                      ? "text-blue-400"
+                      : spentPercent < 90
+                      ? "text-yellow-400"
+                      : "text-red-400"
+                  }`}
+                >
+                  {budgetMessage}
                 </p>
               </div>
 
@@ -111,7 +134,7 @@ export default function Dashboard() {
             <div className="grid grid-cols-2 gap-4">
               <Link
                 href="/dashboard/transactions"
-                className="rounded-2xl bg-blue-950/40 border border-blue-500/30 p-6 backdrop-blur-xl hover:bg-blue-900/40 transition"
+                className="rounded-2xl bg-orange-950/40 border border-orange-500/30 p-6 backdrop-blur-xl hover:bg-orange-900/40 transition"
               >
                 Add Transaction
               </Link>
@@ -132,7 +155,7 @@ export default function Dashboard() {
 
               <Link
                 href="/dashboard/goals"
-                className="rounded-2xl bg-orange-950/40 border border-orange-500/30 p-6 backdrop-blur-xl hover:bg-orange-900/40 transition"
+                className="rounded-2xl bg-zinc-950/40 border border-zinc-500/30 p-6 backdrop-blur-xl hover:bg-zinc-900/40 transition"
               >
                 Goals
               </Link>
