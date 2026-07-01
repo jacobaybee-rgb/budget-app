@@ -1,14 +1,9 @@
 "use client";
 
-export default function CommandCenterHeader() {
-  const hour = new Date().getHours();
-  let greeting = "Good evening";
-  let emoji = "🌅";
+import { getTimeTheme } from "@/lib/timeTheme";
 
-  if (hour >= 5 && hour < 12) { greeting = "Good morning"; emoji = "🌅"; }
-  else if (hour >= 12 && hour < 17) { greeting = "Good afternoon"; emoji = "☀️"; }
-  else if (hour >= 17 && hour < 21) { greeting = "Good evening"; emoji = "🌇"; }
-  else { greeting = "Good night"; emoji = "🌙"; }
+export default function CommandCenterHeader() {
+  const { greeting, emoji } = getTimeTheme();
 
   const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 

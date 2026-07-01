@@ -15,6 +15,12 @@ export default function MobileNav() {
         <Link href="/dashboard/transactions" className="text-zinc-300">
           Transactions
         </Link>
+        <Link
+          href="/dashboard/income"
+          className="text-zinc-300"
+        >
+          Income
+        </Link>
       </div>
     </nav>
   );

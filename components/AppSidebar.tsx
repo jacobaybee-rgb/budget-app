@@ -28,6 +28,13 @@ export default function AppSidebar() {
         >
           Transactions
         </Link>
+
+        <Link
+          href="/dashboard/income"
+          className="block rounded-xl px-4 py-3 text-zinc-300 hover:bg-zinc-900 hover:text-white"
+        >
+          Income
+        </Link>
       </nav>
     </aside>
   );

@@ -5,23 +5,25 @@ import CategoryList from "@/components/CategoryList";
 import TransactionList from "@/components/TransactionList";
 import AppLayout from "@/components/AppLayout";
 import CommandCenterHeader from "@/components/CommandCenterHeader";
+import { getTimeTheme } from "@/lib/timeTheme";
+import Link from "next/link";
 
 export default function Dashboard() {
-  const { categories, transactions } = useBudget();
+  const { categories, transactions, incomeSources } = useBudget();
 
-  const income = 5000;
+  const income = incomeSources.reduce(
+    (total, incomeSource) => total + incomeSource.amount,
+    0
+  );
   const spent = transactions.reduce((total, t) => total + Math.abs(t.amount || 0), 0);
   const remaining = income - spent;
-  const spentPercent = Math.min(Math.round((spent / income) * 100), 100);
+  const spentPercent =
+  income > 0
+    ? Math.min(Math.round((spent / income) * 100), 100)
+    : 0;
 
   // Dynamic vibrant background
-  const hour = new Date().getHours();
-  let bgImage = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070"; // sunset
-
-  if (hour >= 5 && hour < 12) bgImage = "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?q=80&w=2070";
-  else if (hour >= 12 && hour < 17) bgImage = "https://images.unsplash.com/photo-1519904985650-2c3c3e2c5c3b?q=80&w=2070";
-  else if (hour >= 17 && hour < 21) bgImage = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070";
-  else bgImage = "https://images.unsplash.com/photo-1531366936337-7c912a4589a3?q=80&w=2070";
+  const { bgImage } = getTimeTheme();
 
   return (
     <AppLayout>
@@ -48,7 +50,10 @@ export default function Dashboard() {
                   REMAINING THIS MONTH
                 </p>
                 <p className="text-6xl font-bold mt-4">
-                  ${remaining.toLocaleString()}
+                  ${remaining.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                 </p>
                 <p className="text-emerald-400 mt-2">
                   You're doing great! 💪
@@ -69,15 +74,30 @@ export default function Dashboard() {
 
             <div className="grid grid-cols-3 gap-6 mt-8 text-center border-t border-zinc-800 pt-6">
               <div>
-                <p className="text-green-400 text-2xl font-bold">$5,000.00</p>
+                <p className="text-green-400 text-2xl font-bold">
+                  ${income.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </p>
                 <p className="text-xs text-zinc-400">INCOME</p>
               </div>
               <div>
-                <p className="text-orange-400 text-2xl font-bold">${spent.toLocaleString()}</p>
+                <p className="text-orange-400 text-2xl font-bold">
+                  ${spent.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </p>
                 <p className="text-xs text-zinc-400">SPENT</p>
               </div>
               <div>
-                <p className="text-blue-400 text-2xl font-bold">${remaining.toLocaleString()}</p>
+                <p className="text-blue-400 text-2xl font-bold">
+                  ${remaining.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </p>
                 <p className="text-xs text-zinc-400">REMAINING</p>
               </div>
             </div>
@@ -89,18 +109,33 @@ export default function Dashboard() {
             </p>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-2xl bg-blue-950/40 border border-blue-500/30 p-6 backdrop-blur-xl">
+              <Link
+                href="/dashboard/transactions"
+                className="rounded-2xl bg-blue-950/40 border border-blue-500/30 p-6 backdrop-blur-xl hover:bg-blue-900/40 transition"
+              >
                 Add Transaction
-              </div>
-              <div className="rounded-2xl bg-purple-950/40 border border-purple-500/30 p-6 backdrop-blur-xl">
-                New Category
-              </div>
-              <div className="rounded-2xl bg-green-950/40 border border-green-500/30 p-6 backdrop-blur-xl">
-                Add Income
-              </div>
-              <div className="rounded-2xl bg-orange-950/40 border border-orange-500/30 p-6 backdrop-blur-xl">
-                Create Goal
-              </div>
+              </Link>
+
+              <Link
+                href="/dashboard/categories"
+                className="rounded-2xl bg-purple-950/40 border border-purple-500/30 p-6 backdrop-blur-xl hover:bg-purple-900/40 transition"
+              >
+                Categories
+              </Link>
+
+              <Link
+                href="/dashboard/income"
+                className="rounded-2xl bg-green-950/40 border border-green-500/30 p-6 backdrop-blur-xl hover:bg-green-900/40 transition"
+              >
+                Income
+              </Link>
+
+              <Link
+                href="/dashboard/goals"
+                className="rounded-2xl bg-orange-950/40 border border-orange-500/30 p-6 backdrop-blur-xl hover:bg-orange-900/40 transition"
+              >
+                Goals
+              </Link>
             </div>
           </section>
         </div>
