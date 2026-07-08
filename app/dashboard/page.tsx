@@ -7,9 +7,28 @@ import AppLayout from "@/components/AppLayout";
 import CommandCenterHeader from "@/components/CommandCenterHeader";
 import { getTimeTheme } from "@/lib/timeTheme";
 import Link from "next/link";
+import {
+  Bell,
+  CalendarDays,
+  CreditCard,
+  FolderPlus,
+  DollarSign,
+  Target,
+  ArrowRight,
+  Wallet,
+  TrendingUp,
+} from "lucide-react";
+import type { ReactNode } from "react";
 
 export default function Dashboard() {
   const { categories, transactions, incomeSources } = useBudget();
+  const notificationCount = 0;
+  const today = new Date();
+
+  const currentMonthYear = today.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
 
   const income = incomeSources.reduce(
     (total, incomeSource) => total + incomeSource.amount,
@@ -45,11 +64,51 @@ export default function Dashboard() {
         className="relative h-[325px] -mt-10 -mx-6 bg-cover bg-center"
         style={{
           backgroundImage: `${heroOverlay}, url(${bgImage})`,
-          backgroundPosition: "center 10%",
+          backgroundPosition: "center 8%",
         }}
       >
-        <div className="px-8 pt-12">
+        <div className="px-8 pt-12 relative">
           <CommandCenterHeader />
+
+          <div className="absolute top-8 right-8 flex items-start gap-4">
+            <button
+              type="button"
+              onClick={() => alert("Calendar coming soon!")}
+              className="rounded-xl border border-white/10 bg-black/40 px-5 py-3 text-sm font-semibold text-white shadow-lg backdrop-blur transition hover:bg-white/10"
+            >
+              <div className="flex items-center gap-2">
+                <CalendarDays className="h-5 w-5 text-blue-300" />
+                <span>{currentMonthYear}</span>
+            </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => alert("Notifications coming soon!")}
+              className="relative rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-white shadow-lg backdrop-blur transition hover:bg-white/10"
+            >
+              <Bell className="h-5 w-5" />
+
+              {notificationCount > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold">
+                  {notificationCount}
+                </span>
+              )}
+            </button>
+          </div>
+
+          <div className="absolute top-24 right-8 w-64 rounded-2xl border border-white/10 bg-black/45 p-6 shadow-xl backdrop-blur">
+            <p className="text-sm font-semibold text-zinc-300">Financial Status</p>
+
+            <div className="mt-3 flex items-center gap-2">
+              <h3 className="text-3xl font-bold text-green-400">On Track</h3>
+              <span className="h-3 w-3 rounded-full bg-green-400"></span>
+            </div>
+
+            <p className="mt-3 text-sm text-zinc-200">
+              You’re making great financial decisions.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -94,7 +153,6 @@ export default function Dashboard() {
                 style={{ width: `${spentPercent}%` }}
               />            
             </div>
-
             <div className="grid grid-cols-3 gap-6 mt-8 text-center border-t border-zinc-800 pt-6">
               <div>
                 <p className="text-green-400 text-2xl font-bold">
@@ -105,6 +163,7 @@ export default function Dashboard() {
                 </p>
                 <p className="text-xs text-zinc-400">INCOME</p>
               </div>
+
               <div>
                 <p className="text-orange-400 text-2xl font-bold">
                   ${spent.toLocaleString(undefined, {
@@ -114,6 +173,7 @@ export default function Dashboard() {
                 </p>
                 <p className="text-xs text-zinc-400">SPENT</p>
               </div>
+
               <div>
                 <p className="text-blue-400 text-2xl font-bold">
                   ${remaining.toLocaleString(undefined, {
@@ -132,35 +192,78 @@ export default function Dashboard() {
             </p>
 
             <div className="grid grid-cols-2 gap-4">
-              <Link
+              <QuickActionCard
                 href="/dashboard/transactions"
-                className="rounded-2xl bg-orange-950/40 border border-orange-500/30 p-6 backdrop-blur-xl hover:bg-orange-900/40 transition"
-              >
-                Add Transaction
-              </Link>
+                title="Add Transaction"
+                description="Record a new purchase"
+                icon={<CreditCard className="h-8 w-8 text-orange-400" />}
+                color="orange"
+              />
 
-              <Link
+              <QuickActionCard
                 href="/dashboard/categories"
-                className="rounded-2xl bg-purple-950/40 border border-purple-500/30 p-6 backdrop-blur-xl hover:bg-purple-900/40 transition"
-              >
-                Categories
-              </Link>
+                title="New Category"
+                description="Create a budget category"
+                icon={<FolderPlus className="h-8 w-8 text-purple-400" />}
+                color="purple"
+              />
 
-              <Link
+              <QuickActionCard
                 href="/dashboard/income"
-                className="rounded-2xl bg-green-950/40 border border-green-500/30 p-6 backdrop-blur-xl hover:bg-green-900/40 transition"
-              >
-                Income
-              </Link>
+                title="Add Income"
+                description="Record income received"
+                icon={<DollarSign className="h-8 w-8 text-green-400" />}
+                color="green"
+              />
 
-              <Link
+              <QuickActionCard
                 href="/dashboard/goals"
-                className="rounded-2xl bg-zinc-950/40 border border-zinc-500/30 p-6 backdrop-blur-xl hover:bg-zinc-900/40 transition"
-              >
-                Goals
-              </Link>
+                title="Create Goal"
+                description="Set a savings goal"
+                icon={<Target className="h-8 w-8 text-zinc-300" />}
+                color="zinc"
+              />
             </div>
           </section>
+        </div>
+      </div>
+
+      {/* Financial Overview Cards */}
+      <div className="px-8 pt-6">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <StatCard
+            label="Income"
+            value={income}
+            helper="Money coming in"
+            icon={<DollarSign className="h-6 w-6 text-green-400" />}
+            color="green"
+          />
+
+          <StatCard
+            label="Expenses"
+            value={spent}
+            helper={`${transactions.length} transactions`}
+            icon={<CreditCard className="h-6 w-6 text-orange-400" />}
+            color="orange"
+          />
+
+          <StatCard
+            label="Remaining"
+            value={remaining}
+            helper="Available balance"
+            icon={<Wallet className="h-6 w-6 text-blue-400" />}
+            color="blue"
+          />
+
+          <StatCard
+            label="Savings Rate"
+            value={`${
+              income > 0 ? Math.max(Math.round((remaining / income) * 100), 0) : 0
+            }%`}
+            helper="Income unspent"
+            icon={<TrendingUp className="h-6 w-6 text-purple-400" />}
+            color="purple"
+          />
         </div>
       </div>
 
@@ -172,5 +275,89 @@ export default function Dashboard() {
         </div>
       </div>
     </AppLayout>
+  );
+}
+
+function QuickActionCard({
+  href,
+  title,
+  description,
+  icon,
+  color,
+}: {
+  href: string;
+  title: string;
+  description: string;
+  icon: ReactNode;
+  color: "orange" | "purple" | "green" | "zinc";
+}) {
+  const colors = {
+    orange: "border-orange-500/40 bg-orange-950/40 hover:bg-orange-900/50",
+    purple: "border-purple-500/40 bg-purple-950/40 hover:bg-purple-900/50",
+    green: "border-green-500/40 bg-green-950/40 hover:bg-green-900/50",
+    zinc: "border-zinc-500/40 bg-zinc-950/40 hover:bg-zinc-900/50",
+  };
+
+  return (
+    <Link
+      href={href}
+      className={`group rounded-2xl border p-6 backdrop-blur-xl transition ${colors[color]}`}
+    >
+      <div className="mb-6 flex items-center justify-between">
+          <div className="rounded-xl bg-white/5 p-3">
+              {icon}
+          </div>
+
+          <ArrowRight className="h-5 w-5 text-white/50 transition group-hover:translate-x-1" />
+      </div>
+
+      <h3 className="text-xl font-bold text-white">{title}</h3>
+
+      <p className="mt-2 text-sm text-zinc-300">{description}</p>
+    </Link>
+  );
+}
+function StatCard({
+  label,
+  value,
+  helper,
+  icon,
+  color,
+}: {
+  label: string;
+  value: number | string;
+  helper: string;
+  icon: ReactNode;
+  color: "green" | "orange" | "blue" | "purple";
+}) {
+  const colors = {
+    green: "border-green-500/30 bg-green-950/20",
+    orange: "border-orange-500/30 bg-orange-950/20",
+    blue: "border-blue-500/30 bg-blue-950/20",
+    purple: "border-purple-500/30 bg-purple-950/20",
+  };
+
+  const displayValue =
+    typeof value === "number"
+      ? `$${value.toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}`
+      : value;
+
+  return (
+    <div
+      className={`rounded-2xl border p-4 transition hover:-translate-y-1 hover:bg-white/5 ${colors[color]}`}
+    >
+      <div className="mb-4 flex items-center justify-between">
+        <div className="rounded-xl bg-white/5 p-2">{icon}</div>
+      </div>
+
+      <p className="text-xs uppercase tracking-widest text-zinc-400">{label}</p>
+
+      <p className="mt-2 text-2xl font-bold text-white">{displayValue}</p>
+
+      <p className="mt-1 text-xs text-zinc-400">{helper}</p>
+    </div>
   );
 }
