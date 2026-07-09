@@ -10,7 +10,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     <main className="flex min-h-screen bg-zinc-950 text-white">
       <AppSidebar />
 
-      <section className="flex-1 px-6 py-10 pb-24">
+      <section className="flex-1 px-6 py-10 pb-28 md:pb-10">
         {children}
       </section>
 

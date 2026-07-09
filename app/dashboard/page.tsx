@@ -34,7 +34,11 @@ export default function Dashboard() {
     (total, incomeSource) => total + incomeSource.amount,
     0
   );
-  const spent = transactions.reduce((total, t) => total + Math.abs(t.amount || 0), 0);
+  const spent = transactions.reduce(
+    (total, transaction) =>
+      transaction.amount < 0 ? total + Math.abs(transaction.amount) : total,
+    0
+  );
   const remaining = income - spent;
   const spentPercent =
   income > 0

@@ -28,7 +28,7 @@ export default function TransactionList({
       <div className="mt-6 space-y-4">
         {transactions.map((transaction) => (
           <div
-            key={`${transaction.name}-${transaction.amount}`}
+            key={transaction.id}
             className="flex items-center justify-between rounded-xl bg-zinc-950 p-4 transition hover:bg-zinc-800"
           >
             <div className="flex items-center gap-3">

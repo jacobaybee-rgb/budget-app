@@ -34,8 +34,9 @@ export default function TransactionsPage() {
     addTransaction({
       id: crypto.randomUUID(),
       name: trimmedName,
-      amount: amountNumber,
+      amount: -Math.abs(amountNumber),
       category,
+      date: new Date().toISOString().split("T")[0],
     });
 
     setName("");

@@ -10,7 +10,8 @@ export function getCategorySpent(
       (transaction) => transaction.category === category.name
     )
     .reduce(
-      (total, transaction) => total + transaction.amount,
+      (total, transaction) =>
+        total + Math.abs(transaction.amount),
       0
     );
 }
