@@ -13,18 +13,21 @@ export const sampleTransactions: Transaction[] = [
     id: "t1",
     name: "Walmart",
     category: "Groceries",
-    amount: 82.43,
+    amount: -82.43,
+    date: "2026-07-01"
   },
   {
     id: "t2",
     name: "Shell",
     category: "Gas",
-    amount: 46.10,
+    amount: -46.10,
+    date: "2026-07-01"
   },
   {
     id: "t3",
     name: "Amazon",
     category: "Shopping",
-    amount: 27.99,
+    amount: -27.99,
+    date: "2026-07-01"
   },
 ];
