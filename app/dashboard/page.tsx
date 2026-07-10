@@ -274,8 +274,18 @@ export default function Dashboard() {
       {/* Main Content */}
       <div className="px-8 pt-6 space-y-8">
         <div className="grid gap-8 lg:grid-cols-2">
-          <CategoryList categories={categories} transactions={transactions} />
-          <TransactionList transactions={transactions} />
+          <CategoryList
+            categories={categories}
+            transactions={transactions}
+            limit={5}
+            showViewAll
+          />
+
+          <TransactionList
+            transactions={transactions}
+            limit={5}
+            showViewAll
+          />
         </div>
       </div>
     </AppLayout>
