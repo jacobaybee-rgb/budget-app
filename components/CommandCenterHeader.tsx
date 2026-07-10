@@ -13,8 +13,9 @@ export default function CommandCenterHeader() {
         Dashboard
       </p>
 
-      <h1 className="mt-2 text-5xl md:text-6xl font-bold tracking-tight text-white drop-shadow-lg">
-        {greeting}, Jacob
+      <h1 className="text-5xl font-bold text-white">
+        {greeting},
+        <span className="block 2xl:inline"> Jacob</span>
       </h1>
 
       <p className="text-zinc-200 mt-3 text-lg drop-shadow">

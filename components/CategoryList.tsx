@@ -33,7 +33,7 @@ export default function CategoryList({
       : sortedCategories;
 
   return (
-    <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+    <section className="rounded-2xl border border-purple-700/70 bg-zinc-900 p-6">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm uppercase tracking-widest text-purple-400">

@@ -172,7 +172,7 @@ export default function TransactionsPage() {
             <input
               value={name}
               onChange={(event) => setName(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white"
+              className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-orange-300"
               placeholder="Add Description"
             />
 
@@ -182,7 +182,7 @@ export default function TransactionsPage() {
             <input
               value={amount}
               onChange={(event) => setAmount(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white"
+              className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-orange-300"
               placeholder="Add numerical amount"
               type="number"
             />
@@ -193,7 +193,7 @@ export default function TransactionsPage() {
             <select
               value={category}
               onChange={(event) => setCategory(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white"
+              className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-orange-300"
             >
               <option value="">Select a Category</option>
 

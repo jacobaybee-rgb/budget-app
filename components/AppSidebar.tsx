@@ -43,6 +43,11 @@ export default function AppSidebar() {
         <Link href="/dashboard/bills" className="block rounded-xl px-4 py-3 text-red-400 hover:bg-zinc-900 hover:text-white">
           Bills
         </Link>
+
+        <Link href="/dashboard/goals" className="block rounded-xl px-4 py-3 text-yellow-400 hover:bg-zinc-900 hover:text-white">
+          Goals
+        </Link>
+
       </nav>
 
       <Link

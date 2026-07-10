@@ -22,11 +22,20 @@ export type Bill = {
   transactionId?: string;
 };
 
+export type Goal = {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  targetDate: string;
+};
+
 type BudgetContextType = {
   categories: Category[];
   transactions: Transaction[];
   incomeSources: IncomeSource[];
   bills: Bill[];
+  goals: Goal[];
 
   addCategory: (category: Category) => void;
   updateCategory: (
@@ -38,11 +47,14 @@ type BudgetContextType = {
   addIncomeSource: (incomeSource: IncomeSource) => void;
   updateIncomeSource: (updatedIncomeSource: IncomeSource) => void;
   addBill: (bill: Bill) => void;
+  addGoal: (goal: Goal) => void;
+  updateGoal: (updatedGoal: Goal) => void;
 
   deleteCategory: (id: string) => void;
   deleteTransaction: (id: string) => void;
   deleteIncomeSource: (id: string) => void;
   deleteBill: (id: string) => void;
+  deleteGoal: (id: string) => void;
 
   toggleBillPaid: (id: string) => void;
 };
@@ -55,12 +67,14 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     useState<Transaction[]>(sampleTransactions);
   const [incomeSources, setIncomeSources] = useState<IncomeSource[]>([]);
   const [bills, setBills] = useState<Bill[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
 
   useEffect(() => {
     const savedCategories = localStorage.getItem("categories");
     const savedTransactions = localStorage.getItem("transactions");
     const savedIncomeSources = localStorage.getItem("incomeSources");
     const savedBills = localStorage.getItem("bills");
+    const savedGoals = localStorage.getItem("goals");
 
     if (savedCategories) {
       setCategories(JSON.parse(savedCategories));
@@ -76,6 +90,10 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
 
     if (savedBills) {
       setBills(JSON.parse(savedBills));
+    }
+
+    if (savedGoals) {
+      setGoals(JSON.parse(savedGoals));
     }
   }, []);
 
@@ -94,6 +112,10 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     localStorage.setItem("bills", JSON.stringify(bills));
   }, [bills]);
+
+  useEffect(() => {
+    localStorage.setItem("goals", JSON.stringify(goals));
+  }, [goals]);
 
   function addCategory(category: Category) {
     setCategories((currentCategories) => [...currentCategories, category]);
@@ -249,6 +271,24 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
+  function addGoal(goal: Goal) {
+    setGoals((currentGoals) => [...currentGoals, goal]);
+  }
+
+  function updateGoal(updatedGoal: Goal) {
+    setGoals((currentGoals) =>
+      currentGoals.map((goal) =>
+        goal.id === updatedGoal.id ? updatedGoal : goal
+      )
+    );
+  }
+
+  function deleteGoal(id: string) {
+    setGoals((currentGoals) =>
+      currentGoals.filter((goal) => goal.id !== id)
+    );
+  }
+
   return (
     <BudgetContext.Provider
       value={{
@@ -256,6 +296,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         transactions,
         incomeSources,
         bills,
+        goals,
 
         addCategory,
         updateCategory,
@@ -264,11 +305,14 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         addIncomeSource,
         updateIncomeSource,
         addBill,
+        addGoal,
+        updateGoal,
 
         deleteCategory,
         deleteTransaction,
         deleteIncomeSource,
         deleteBill,
+        deleteGoal,
 
         toggleBillPaid,
       }}

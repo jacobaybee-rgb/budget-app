@@ -100,7 +100,7 @@ export default function BillsPage() {
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 placeholder="Bill name"
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-blue-500"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-red-400"
               />
 
               <input
@@ -108,7 +108,7 @@ export default function BillsPage() {
                 onChange={(event) => setAmount(event.target.value)}
                 placeholder="Monthly Amount"
                 type="number"
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-blue-500"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-red-400"
               />
 
               <input
@@ -116,13 +116,13 @@ export default function BillsPage() {
                 onChange={(event) => setDueDay(event.target.value)}
                 placeholder="Due day, example: 15"
                 type="number"
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-blue-500"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-red-400"
               />
 
               <select
                 value={category}
                 onChange={(event) => setCategory(event.target.value)}
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-blue-500"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-red-400"
                 >
                 <option value="">Select a category</option>
 

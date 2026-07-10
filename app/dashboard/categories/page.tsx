@@ -174,7 +174,7 @@ export default function CategoriesPage() {
             <input
               value={name}
               onChange={(event) => setName(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white"
+              className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-purple-500/50"
               placeholder="Name of Category"
             />
 
@@ -184,7 +184,7 @@ export default function CategoriesPage() {
             <input
               value={budget}
               onChange={(event) => setBudget(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white"
+              className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-purple-500/50"
               placeholder="Amount you want to budget"
               type="number"
             />
