@@ -1,11 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import AppLayout from "@/components/AppLayout";
 import AddIncomeForm from "@/components/AddIncomeForm";
 import { useBudget } from "@/context/BudgetContext";
 
 export default function IncomePage() {
   const { incomeSources, deleteIncomeSource } = useBudget();
+
+  const [editingIncomeId, setEditingIncomeId] = useState<string | null>(null);
+
+  const editingIncome =
+    incomeSources.find(
+      (incomeSource) => incomeSource.id === editingIncomeId
+    ) ?? null;
 
   const totalIncome = incomeSources.reduce(
     (total, incomeSource) => total + incomeSource.amount,
@@ -64,7 +72,10 @@ export default function IncomePage() {
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[400px_1fr]">
-          <AddIncomeForm />
+          <AddIncomeForm
+            editingIncome={editingIncome}
+            onCancelEdit={() => setEditingIncomeId(null)}
+          />
 
           <section className="rounded-2xl border border-emerald-800 bg-zinc-950/80 p-6">
             <p className="uppercase tracking-widest text-emerald-400 text-sm mb-4">
@@ -107,12 +118,29 @@ export default function IncomePage() {
                           })}
                         </p>
 
-                        <button
-                          onClick={() => deleteIncomeSource(incomeSource.id)}
-                          className="mt-2 text-sm text-red-400 hover:text-red-300"
-                        >
-                          Delete
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setEditingIncomeId(incomeSource.id)}
+                            className="rounded-lg border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-300 transition hover:border-blue-500 hover:text-blue-400"
+                          >
+                            Edit
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              deleteIncomeSource(incomeSource.id);
+
+                              if (editingIncomeId === incomeSource.id) {
+                                setEditingIncomeId(null);
+                              }
+                            }}
+                            className="rounded-lg border border-red-900 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-950"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

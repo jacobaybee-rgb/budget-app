@@ -28,6 +28,10 @@ export default function AppSidebar() {
           Dashboard
         </Link>
 
+        <Link href="/dashboard/income" className="block rounded-xl px-4 py-3 text-green-300 hover:bg-zinc-900 hover:text-white">
+          Income
+        </Link>
+
         <Link href="/dashboard/categories" className="block rounded-xl px-4 py-3 text-purple-300 hover:bg-zinc-900 hover:text-white">
           Categories
         </Link>
@@ -36,11 +40,7 @@ export default function AppSidebar() {
           Transactions
         </Link>
 
-        <Link href="/dashboard/income" className="block rounded-xl px-4 py-3 text-green-300 hover:bg-zinc-900 hover:text-white">
-          Income
-        </Link>
-
-        <Link href="/dashboard/bills" className="block rounded-xl px-4 py-3 text-red-300 hover:bg-zinc-900 hover:text-white">
+        <Link href="/dashboard/bills" className="block rounded-xl px-4 py-3 text-red-400 hover:bg-zinc-900 hover:text-white">
           Bills
         </Link>
       </nav>

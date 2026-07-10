@@ -74,7 +74,7 @@ export default function Dashboard() {
         <div className="px-8 pt-12 relative">
           <CommandCenterHeader />
 
-          <div className="absolute top-8 right-8 flex items-start gap-4">
+          <div className="absolute top-2 right-8 flex items-start gap-4">
             <button
               type="button"
               onClick={() => alert("Calendar coming soon!")}
@@ -101,7 +101,7 @@ export default function Dashboard() {
             </button>
           </div>
 
-          <div className="absolute top-24 right-8 w-64 rounded-2xl border border-white/10 bg-black/45 p-6 shadow-xl backdrop-blur">
+          <div className="absolute top-18 right-8 w-64 rounded-2xl border border-white/10 bg-black/45 p-6 shadow-xl backdrop-blur">
             <p className="text-sm font-semibold text-zinc-300">Financial Status</p>
 
             <div className="mt-3 flex items-center gap-2">

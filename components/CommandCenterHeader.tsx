@@ -10,7 +10,7 @@ export default function CommandCenterHeader() {
   return (
     <div className="relative z-20 max-w-4xl">
       <p className={'text-sm uppercase tracking-widest ${accentText} font-semibold'}>
-        COMMAND CENTER
+        Dashboard
       </p>
 
       <h1 className="mt-2 text-5xl md:text-6xl font-bold tracking-tight text-white drop-shadow-lg">

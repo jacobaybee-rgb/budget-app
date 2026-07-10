@@ -36,6 +36,7 @@ type BudgetContextType = {
   addTransaction: (transaction: Transaction) => void;
   updateTransaction: (transaction: Transaction) => void;
   addIncomeSource: (incomeSource: IncomeSource) => void;
+  updateIncomeSource: (updatedIncomeSource: IncomeSource) => void;
   addBill: (bill: Bill) => void;
 
   deleteCategory: (id: string) => void;
@@ -159,6 +160,16 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     ]);
   }
 
+  function updateIncomeSource(updatedIncomeSource: IncomeSource) {
+    setIncomeSources((currentIncomeSources) =>
+      currentIncomeSources.map((incomeSource) =>
+        incomeSource.id === updatedIncomeSource.id
+          ? updatedIncomeSource
+          : incomeSource
+      )
+    );
+  }
+
   function addBill(bill: Bill) {
     setBills((currentBills) => [...currentBills, bill]);
   }
@@ -251,6 +262,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         addTransaction,
         updateTransaction,
         addIncomeSource,
+        updateIncomeSource,
         addBill,
 
         deleteCategory,

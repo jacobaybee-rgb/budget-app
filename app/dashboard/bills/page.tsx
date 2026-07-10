@@ -68,8 +68,8 @@ export default function BillsPage() {
   return (
     <AppLayout>
       <div className="space-y-8">
-        <section className="rounded-2xl border border-blue-500/30 bg-zinc-950/80 p-6 shadow-xl">
-          <p className="text-sm uppercase tracking-widest text-blue-300">
+        <section className="rounded-2xl border border-red-400 bg-zinc-950/80 p-6 shadow-xl">
+          <p className="text-sm uppercase tracking-widest text-red-400">
             Bills
           </p>
 
@@ -91,7 +91,7 @@ export default function BillsPage() {
         <section className="grid gap-8 lg:grid-cols-[0.9fr_1.3fr]">
           <form
             onSubmit={handleSubmit}
-            className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-6"
+            className="rounded-2xl border border-red-400 bg-zinc-950 p-6"
           >
             <h2 className="text-2xl font-bold text-white">Add Bill</h2>
 
@@ -106,7 +106,7 @@ export default function BillsPage() {
               <input
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
-                placeholder="Amount"
+                placeholder="Monthly Amount"
                 type="number"
                 className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-blue-500"
               />
@@ -135,14 +135,14 @@ export default function BillsPage() {
 
               <button
                 type="submit"
-                className="w-full rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-500"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-1000 px-4 py-3 font-semibold text-red-400 transition hover:bg-red-400/50"
               >
                 Add Bill
               </button>
             </div>
           </form>
 
-          <section className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-6">
+          <section className="rounded-2xl border border-red-400 bg-zinc-950 p-6">
             <h2 className="text-2xl font-bold text-white">Upcoming Bills</h2>
 
             <div className="mt-6 space-y-4">
@@ -157,7 +157,7 @@ export default function BillsPage() {
                   .map((bill) => (
                     <div
                       key={bill.id}
-                      className="flex flex-col gap-4 rounded-xl border border-zinc-800 bg-zinc-950 p-4 sm:flex-row sm:items-center sm:justify-between"
+                      className="flex flex-col gap-4 rounded-xl border border-zinc-700 bg-zinc-950 p-4 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div>
                         <div className="flex items-center gap-2">
