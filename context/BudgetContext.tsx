@@ -29,7 +29,12 @@ type BudgetContextType = {
   bills: Bill[];
 
   addCategory: (category: Category) => void;
+  updateCategory: (
+    updatedCategory: Category,
+    previousName: string
+  ) => void;
   addTransaction: (transaction: Transaction) => void;
+  updateTransaction: (transaction: Transaction) => void;
   addIncomeSource: (incomeSource: IncomeSource) => void;
   addBill: (bill: Bill) => void;
 
@@ -93,11 +98,58 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     setCategories((currentCategories) => [...currentCategories, category]);
   }
 
+  function updateCategory(
+    updatedCategory: Category,
+    previousName: string
+  ) {
+    setCategories((currentCategories) =>
+      currentCategories.map((category) =>
+        category.id === updatedCategory.id
+          ? updatedCategory
+          : category
+      )
+    );
+
+    if (previousName !== updatedCategory.name) {
+      setTransactions((currentTransactions) =>
+        currentTransactions.map((transaction) =>
+          transaction.category === previousName
+            ? {
+                ...transaction,
+                category: updatedCategory.name,
+              }
+            : transaction
+        )
+      );
+
+      setBills((currentBills) =>
+        currentBills.map((bill) =>
+          bill.category === previousName
+            ? {
+                ...bill,
+                category: updatedCategory.name,
+              }
+            : bill
+        )
+      );
+    }
+  }
+
   function addTransaction(transaction: Transaction) {
     setTransactions((currentTransactions) => [
       ...currentTransactions,
       transaction,
     ]);
+  }
+
+  function updateTransaction(updatedTransaction: Transaction) {
+    setTransactions((currentTransactions) =>
+      currentTransactions.map((transaction) =>
+        transaction.id === updatedTransaction.id
+          ? updatedTransaction
+          : transaction
+      )
+    );
   }
 
   function addIncomeSource(incomeSource: IncomeSource) {
@@ -195,7 +247,9 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         bills,
 
         addCategory,
+        updateCategory,
         addTransaction,
+        updateTransaction,
         addIncomeSource,
         addBill,
 

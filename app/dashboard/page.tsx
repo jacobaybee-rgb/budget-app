@@ -169,7 +169,7 @@ export default function Dashboard() {
               </div>
 
               <div>
-                <p className="text-orange-400 text-2xl font-bold">
+                <p className="text-red-400 text-2xl font-bold">
                   ${spent.toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,

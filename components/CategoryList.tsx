@@ -41,7 +41,7 @@ export default function CategoryList({
           </p>
 
           <h2 className="mt-1 text-2xl font-bold">
-            Budget Plans
+            Categories
           </h2>
         </div>
 

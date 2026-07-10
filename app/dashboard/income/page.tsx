@@ -41,20 +41,20 @@ export default function IncomePage() {
             </p>
           </section>
 
-          <section className="rounded-2xl border border-blue-500/30 bg-zinc-950/80 p-6 shadow-xl">
+          <section className="rounded-2xl border border-zinc-500/30 bg-zinc-950/80 p-6 shadow-xl">
             <p className="text-sm uppercase tracking-widest text-zinc-400">
               Income Sources
             </p>
-            <p className="mt-3 text-4xl font-bold text-blue-400">
+            <p className="mt-3 text-4xl font-bold text-zinc-200">
               {sourceCount}
             </p>
           </section>
 
-          <section className="rounded-2xl border border-purple-500/30 bg-zinc-950/80 p-6 shadow-xl">
+          <section className="rounded-2xl border border-blue-500/30 bg-zinc-950/80 p-6 shadow-xl">
             <p className="text-sm uppercase tracking-widest text-zinc-400">
               Average
             </p>
-            <p className="mt-3 text-4xl font-bold text-purple-400">
+            <p className="mt-3 text-4xl font-bold text-blue-400">
               ${averageIncome.toLocaleString(undefined, {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
@@ -66,8 +66,8 @@ export default function IncomePage() {
         <div className="grid gap-8 lg:grid-cols-[400px_1fr]">
           <AddIncomeForm />
 
-          <section className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-6">
-            <p className="uppercase tracking-widest text-zinc-400 text-sm mb-4">
+          <section className="rounded-2xl border border-emerald-800 bg-zinc-950/80 p-6">
+            <p className="uppercase tracking-widest text-emerald-400 text-sm mb-4">
               Income Sources
             </p>
 
@@ -78,7 +78,7 @@ export default function IncomePage() {
                     No income sources yet.
                   </p>
                   <p className="mt-2 text-sm text-zinc-500">
-                    How do you get your money? Work, benefits, theft? Add it here!
+                    How do you make your money?
                   </p>
                 </div>
               ) : (
