@@ -1,35 +1,65 @@
-import Link from "next/link";
+"use client";
+
+import { useEffect, useState } from "react";
+import { Menu, X } from "lucide-react";
+import AppSidebar from "@/components/AppSidebar";
 
 export default function MobileNav() {
+  const [isOpen, setIsOpen] = useState(false);
+
+  function closeMenu() {
+    setIsOpen(false);
+  }
+
+  useEffect(() => {
+    document.body.style.overflow = isOpen ? "hidden" : "";
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-800 bg-zinc-950 p-3 md:hidden">
-      <div className="flex justify-around text-sm">
-        <Link href="/dashboard" className="text-zinc-300">
-          Dashboard
-        </Link>
+    <>
+      {/* Hamburger button */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(true)}
+        aria-label="Open navigation menu"
+        className="fixed left-4 top-4 z-40 flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-950/90 text-white shadow-lg backdrop-blur md:hidden"
+      >
+        <Menu size={24} />
+      </button>
 
-        <Link href="/dashboard/categories" className="text-zinc-300">
-          Categories
-        </Link>
+      {/* Dark page overlay */}
+      <button
+        type="button"
+        onClick={closeMenu}
+        aria-label="Close navigation menu"
+        className={`fixed inset-0 z-40 bg-black/70 transition-opacity duration-300 md:hidden ${
+          isOpen
+            ? "pointer-events-auto opacity-100"
+            : "pointer-events-none opacity-0"
+        }`}
+      />
 
-        <Link href="/dashboard/transactions" className="text-zinc-300">
-          Transactions
-        </Link>
-        <Link
-          href="/dashboard/income"
-          className="text-zinc-300"
+      {/* Sliding sidebar */}
+      <div
+        className={`fixed inset-y-0 left-0 z-50 w-60 transition-transform duration-300 ease-in-out md:hidden ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <AppSidebar onNavigate={closeMenu} />
+
+        <button
+          type="button"
+          onClick={closeMenu}
+          aria-label="Close navigation menu"
+          className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 text-zinc-300 transition hover:bg-zinc-800 hover:text-white"
         >
-          Income
-        </Link>
-        <Link href="/dashboard/bills" className="text-zinc-300">
-          Bills
-        </Link>
-
-        <Link href="/dashboard/profile" className="text-zinc-300">
-          Profile
-        </Link>
-
+          <X size={22} />
+        </button>
       </div>
-    </nav>
+    </>
   );
 }

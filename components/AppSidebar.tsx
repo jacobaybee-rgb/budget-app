@@ -1,57 +1,85 @@
 import Link from "next/link";
 import Image from "next/image";
 
-export default function AppSidebar() {
+export default function AppSidebar({
+  onNavigate,
+}: {
+  onNavigate?: () => void;
+}) {
   return (
-    <aside className="hidden min-h-screen w-55 border-r border-blue-400 bg-zinc-950 p-4 md:flex md:flex-col">
+    <aside className="flex h-full min-h-screen w-60 flex-col border-r border-blue-400 bg-zinc-950 p-4">
       <div className="flex flex-col items-center border-b border-blue-400 pb-5">
-        <Link href="/dashboard">
+        <Link href="/dashboard" onClick={onNavigate}>
           <Image
             src="/logos/bell-logo-v2.png"
             alt="Bell's Budgeting logo"
             width={140}
             height={140}
             priority
-            className="transition duration-300 hover:scale-105 drop-shadow-[0_0_15px_rgba(250,204,21,0.35)]"
+            className="drop-shadow-[0_0_15px_rgba(250,204,21,0.35)] transition duration-300 hover:scale-105"
           />
         </Link>
 
         <h1 className="text-center text-3xl font-bold leading-tight">
-          Bell's
+          Bell&apos;s
           <br />
           Budgeting
         </h1>
       </div>
 
       <nav className="mt-5 flex-1 space-y-2">
-        <Link href="/dashboard" className="block rounded-xl px-4 py-3 text-sky-300 hover:bg-zinc-900 hover:text-white">
+        <SidebarLink
+          href="/dashboard"
+          color="text-sky-300"
+          onNavigate={onNavigate}
+        >
           Dashboard
-        </Link>
+        </SidebarLink>
 
-        <Link href="/dashboard/income" className="block rounded-xl px-4 py-3 text-green-300 hover:bg-zinc-900 hover:text-white">
+        <SidebarLink
+          href="/dashboard/income"
+          color="text-green-300"
+          onNavigate={onNavigate}
+        >
           Income
-        </Link>
+        </SidebarLink>
 
-        <Link href="/dashboard/categories" className="block rounded-xl px-4 py-3 text-purple-300 hover:bg-zinc-900 hover:text-white">
+        <SidebarLink
+          href="/dashboard/categories"
+          color="text-purple-300"
+          onNavigate={onNavigate}
+        >
           Categories
-        </Link>
+        </SidebarLink>
 
-        <Link href="/dashboard/transactions" className="block rounded-xl px-4 py-3 text-orange-300 hover:bg-zinc-900 hover:text-white">
+        <SidebarLink
+          href="/dashboard/transactions"
+          color="text-orange-300"
+          onNavigate={onNavigate}
+        >
           Transactions
-        </Link>
+        </SidebarLink>
 
-        <Link href="/dashboard/bills" className="block rounded-xl px-4 py-3 text-red-400 hover:bg-zinc-900 hover:text-white">
+        <SidebarLink
+          href="/dashboard/bills"
+          color="text-red-400"
+          onNavigate={onNavigate}
+        >
           Bills
-        </Link>
+        </SidebarLink>
 
-        <Link href="/dashboard/goals" className="block rounded-xl px-4 py-3 text-yellow-400 hover:bg-zinc-900 hover:text-white">
+        <SidebarLink
+          href="/dashboard/goals"
+          color="text-yellow-400"
+          onNavigate={onNavigate}
+        >
           Goals
-        </Link>
-
+        </SidebarLink>
       </nav>
 
       <Link
         href="/dashboard/profile"
+        onClick={onNavigate}
         className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-900/70 p-4 transition hover:border-blue-500/40 hover:bg-zinc-900"
       >
         <div className="flex items-center gap-3">
@@ -66,5 +94,27 @@ export default function AppSidebar() {
         </div>
       </Link>
     </aside>
+  );
+}
+
+function SidebarLink({
+  href,
+  color,
+  children,
+  onNavigate,
+}: {
+  href: string;
+  color: string;
+  children: React.ReactNode;
+  onNavigate?: () => void;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onNavigate}
+      className={`block rounded-xl px-4 py-3 transition hover:bg-zinc-900 hover:text-white ${color}`}
+    >
+      {children}
+    </Link>
   );
 }

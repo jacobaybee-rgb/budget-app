@@ -42,9 +42,9 @@ export default function Dashboard() {
   );
   const remaining = income - spent;
   const spentPercent =
-  income > 0
-    ? Math.min(Math.round((spent / income) * 100), 100)
-    : 0;
+    income > 0
+      ? Math.min(Math.round((spent / income) * 100), 100)
+      : 0;
 
   const budgetMessage =
     income === 0
@@ -107,27 +107,30 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
-      {/* Top Background Hero - Mockup Style */}
+      {/* Top Background Hero */}
       <div
-        className="relative min-h-[500px] -mt-10 -mx-6 bg-cover bg-center 2xl:min-h-0 2xl:h-[325px]"
+        className="relative -mx-6 bg-cover bg-center md:-mt-6 2xl:h-[325px]"
         style={{
           backgroundImage: `${heroOverlay}, url(${bgImage})`,
           backgroundPosition: "center 8%",
         }}
       >
-        <div className="relative px-6 pt-20 sm:px-8 sm:pt-12">
-          <CommandCenterHeader />
-
-          <div className="absolute top-2 right-8 flex items-start gap-4">
+        <div className="relative px-14 pb-20 pt-20 md:pt-16">
+          {/* Mobile: normal top row */}
+          {/* Desktop: positioned in the top-right corner */}
+          <div className="relative z-30 mb-8 flex justify-end gap-2 pl-16 md:absolute md:right-8 md:top-12 md:mb-0 md:pl-0">
             <button
               type="button"
               onClick={() => alert("Calendar coming soon!")}
-              className="rounded-xl border border-white/10 bg-black/40 px-5 py-3 text-sm font-semibold text-white shadow-lg backdrop-blur transition hover:bg-white/10"
+              className="rounded-xl border border-white/10 bg-black/40 px-3 py-3 text-sm font-semibold text-white shadow-lg backdrop-blur transition hover:bg-white/10 sm:px-5"
             >
               <div className="flex items-center gap-2">
                 <CalendarDays className="h-5 w-5 text-blue-300" />
-                <span>{currentMonthYear}</span>
-            </div>
+
+                <span className="hidden sm:inline">
+                  {currentMonthYear}
+                </span>
+              </div>
             </button>
 
             <button
@@ -145,7 +148,9 @@ export default function Dashboard() {
             </button>
           </div>
 
-          <div className="mt-6 w-full max-w-sm rounded-2xl border border-white/10 bg-black/45 p-6 shadow-xl backdrop-blur 2xl:absolute 2xl:top-18 2xl:right-8 2xl:mt-0 2xl:w-64">
+          <CommandCenterHeader />
+
+          <div className="relative z-20 mt-6 w-full max-w-sm rounded-2xl border border-white/10 bg-black/45 p-6 shadow-xl backdrop-blur 2xl:absolute 2xl:right-8 2xl:top-24 2xl:mt-0 2xl:w-80">
             <p className="text-sm font-semibold text-zinc-300">
               Financial Status
             </p>
@@ -167,10 +172,10 @@ export default function Dashboard() {
             </p>
           </div>
         </div>
-      </div>
+      </div>  
 
       {/* Remaining This Month Card */}
-      <div className="px-8 -mt-16 relative z-10">
+      <div className="relative z-10 -mt-8 px-4 sm:px-6 md:-mt-16 md:px-8">
         <div className="grid gap-6 xl:grid-cols-[1.3fr_1fr]">
           <section className="rounded-2xl border border-blue-500/40 bg-zinc-950/80 p-8 shadow-2xl backdrop-blur-xl">
             <div className="flex justify-between items-start">

@@ -1,20 +1,25 @@
 import AppSidebar from "@/components/AppSidebar";
 import MobileNav from "@/components/MobileNav";
 
-type AppLayoutProps = {
+export default function AppLayout({
+  children,
+}: {
   children: React.ReactNode;
-};
-
-export default function AppLayout({ children }: AppLayoutProps) {
+}) {
   return (
-    <main className="flex min-h-screen bg-zinc-950 text-white">
-      <AppSidebar />
+    <div className="min-h-screen bg-zinc-950 text-white">
+      {/* Desktop sidebar */}
+      <div className="fixed inset-y-0 left-0 z-30 hidden w-60 md:block">
+        <AppSidebar />
+      </div>
 
-      <section className="flex-1 px-6 py-10 pb-28 md:pb-10">
-        {children}
-      </section>
-
+      {/* Mobile sidebar button and drawer */}
       <MobileNav />
-    </main>
+
+      {/* Main page content */}
+      <main className="min-h-screen md:ml-60">
+        {children}
+      </main>
+    </div>
   );
 }
