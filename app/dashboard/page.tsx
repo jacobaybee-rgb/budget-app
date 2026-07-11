@@ -177,13 +177,13 @@ export default function Dashboard() {
       {/* Remaining This Month Card */}
       <div className="relative z-10 -mt-8 px-4 sm:px-6 md:-mt-16 md:px-8">
         <div className="grid gap-6 xl:grid-cols-[1.3fr_1fr]">
-          <section className="rounded-2xl border border-blue-500/40 bg-zinc-950/80 p-8 shadow-2xl backdrop-blur-xl">
-            <div className="flex justify-between items-start">
+          <section className="rounded-2xl border border-blue-500/40 bg-zinc-950/80 p-5 shadow-2xl backdrop-blur-xl sm:p-8">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="uppercase text-blue-300 text-sm tracking-widest">
                   REMAINING THIS MONTH
                 </p>
-                <p className="text-6xl font-bold mt-4">
+                <p className="mt-4 text-4xl font-bold sm:text-5xl lg:text-6xl">
                   ${remaining.toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
@@ -204,7 +204,7 @@ export default function Dashboard() {
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-blue-500/30 bg-blue-950/30 px-6 py-4 text-center">
+              <div className="w-fit rounded-2xl border border-blue-500/30 bg-blue-950/30 px-6 py-4 text-center sm:shrink-0">
                 <p className="text-2xl font-bold text-cyan-300">{spentPercent}%</p>                <p className="text-xs text-zinc-300">of income spent</p>
               </div>
             </div>
@@ -215,7 +215,7 @@ export default function Dashboard() {
                 style={{ width: `${spentPercent}%` }}
               />            
             </div>
-            <div className="grid grid-cols-3 gap-6 mt-8 text-center border-t border-zinc-800 pt-6">
+            <div className="mt-8 grid grid-cols-1 gap-5 border-t border-zinc-800 pt-6 text-center sm:grid-cols-3 sm:gap-6">
               <div>
                 <p className="text-green-400 text-2xl font-bold">
                   ${income.toLocaleString(undefined, {
