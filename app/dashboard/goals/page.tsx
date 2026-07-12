@@ -5,7 +5,7 @@ import { useBudget } from "@/context/BudgetContext";
 import GoalsHeader from "@/components/goals/GoalsHeader";
 import GoalsStats from "@/components/goals/GoalsStats";
 import AddGoalForm from "@/components/goals/AddGoalForm";
-import GoalsList from "@/components/goals/GoalsList";
+import GoalsList from "@/components/goals/GoalsListComponent"
 import type { Goal } from "@/types/goal";
 
 export default function GoalsPage() {
