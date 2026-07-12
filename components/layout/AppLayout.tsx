@@ -1,5 +1,5 @@
-import AppSidebar from "@/components/AppSidebar";
-import MobileNav from "@/components/MobileNav";
+import AppSidebar from "@/components/layout/AppSidebar";
+import MobileNav from "@/components/layout/MobileNav";
 
 export default function AppLayout({
   children,

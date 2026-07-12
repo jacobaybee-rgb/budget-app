@@ -1,10 +1,8 @@
 "use client";
 
-import AppLayout from "@/components/AppLayout";
-
 export default function ProfilePage() {
   return (
-    <AppLayout>
+    <>
       <div className="px-8 py-8 space-y-8">
         <div>
           <p className="text-sm uppercase tracking-widest text-blue-300">
@@ -34,7 +32,7 @@ export default function ProfilePage() {
             <p className="text-sm uppercase tracking-widest text-zinc-400">
               App Name
             </p>
-            <p className="mt-3 text-2xl font-bold">Bell's Budgeting</p>
+            <p className="mt-3 text-2xl font-bold">Bell&apos;s Budgeting</p>
           </section>
 
           <section className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-6">
@@ -52,6 +50,6 @@ export default function ProfilePage() {
           </section>
         </div>
       </div>
-    </AppLayout>
+    </>
   );
 }

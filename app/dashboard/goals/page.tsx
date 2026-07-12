@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import AppLayout from "@/components/AppLayout";
-import { Goal, useBudget } from "@/context/BudgetContext";
+import { useBudget } from "@/context/BudgetContext";
+import type { Goal } from "@/types/goal";
 
 export default function GoalsPage() {
   const { goals, addGoal, updateGoal, deleteGoal } = useBudget();
@@ -100,7 +100,7 @@ export default function GoalsPage() {
   }
 
   return (
-    <AppLayout>
+    <>
       <div className="space-y-8 px-8 py-8">
         <div>
           <p className="text-sm uppercase tracking-widest text-yellow-400">
@@ -361,6 +361,6 @@ export default function GoalsPage() {
           </section>
         </div>
       </div>
-    </AppLayout>
+    </>
   );
 }

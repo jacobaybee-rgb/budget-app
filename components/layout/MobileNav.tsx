@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
-import AppSidebar from "@/components/AppSidebar";
+import AppSidebar from "@/components/layout/AppSidebar";
 
 export default function MobileNav() {
   const [isOpen, setIsOpen] = useState(false);

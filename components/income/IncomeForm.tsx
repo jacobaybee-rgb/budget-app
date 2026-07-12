@@ -2,20 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useBudget } from "@/context/BudgetContext";
-
-type IncomeSource = {
-  id: string;
-  source: string;
-  amount: number;
-  date: string;
-};
+import type { IncomeSource } from "@/types/income";
 
 type AddIncomeFormProps = {
   editingIncome: IncomeSource | null;
   onCancelEdit: () => void;
 };
 
-export default function AddIncomeForm({
+export default function IncomeForm({
   editingIncome,
   onCancelEdit,
 }: AddIncomeFormProps) {
@@ -25,6 +19,7 @@ export default function AddIncomeForm({
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState("");
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (editingIncome) {
       setSource(editingIncome.source);
@@ -36,6 +31,7 @@ export default function AddIncomeForm({
       setDate("");
     }
   }, [editingIncome]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   function resetForm() {
     setSource("");

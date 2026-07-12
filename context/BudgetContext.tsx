@@ -2,33 +2,11 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { sampleCategories, sampleTransactions } from "@/data/sampleData";
-import { Category } from "@/types/category";
-import { Transaction } from "@/types/transaction";
-
-export type IncomeSource = {
-  id: string;
-  source: string;
-  amount: number;
-  date: string;
-};
-
-export type Bill = {
-  id: string;
-  name: string;
-  amount: number;
-  dueDay: number;
-  category: string;
-  isPaid: boolean;
-  transactionId?: string;
-};
-
-export type Goal = {
-  id: string;
-  name: string;
-  targetAmount: number;
-  currentAmount: number;
-  targetDate: string;
-};
+import type { Bill } from "@/types/bill";
+import type { Category } from "@/types/category";
+import type { Goal } from "@/types/goal";
+import type { IncomeSource } from "@/types/income";
+import type { Transaction } from "@/types/transaction";
 
 type BudgetContextType = {
   categories: Category[];
@@ -69,6 +47,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
   const [bills, setBills] = useState<Bill[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
 
+  /*eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const savedCategories = localStorage.getItem("categories");
     const savedTransactions = localStorage.getItem("transactions");
@@ -96,6 +75,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
       setGoals(JSON.parse(savedGoals));
     }
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     localStorage.setItem("categories", JSON.stringify(categories));
