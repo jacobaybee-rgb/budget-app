@@ -1,7 +1,13 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
-import { sampleCategories, sampleTransactions } from "@/data/sampleData";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { createClient } from "@/lib/supabase/client";
 import type { Bill } from "@/types/bill";
 import type { Category } from "@/types/category";
 import type { Goal } from "@/types/goal";
@@ -15,57 +21,131 @@ type BudgetContextType = {
   bills: Bill[];
   goals: Goal[];
 
-  addCategory: (category: Category) => void;
+  addCategory: (category: Category) => Promise<void>;
   updateCategory: (
     updatedCategory: Category,
     previousName: string
-  ) => void;
-  addTransaction: (transaction: Transaction) => void;
-  updateTransaction: (transaction: Transaction) => void;
-  addIncomeSource: (incomeSource: IncomeSource) => void;
-  updateIncomeSource: (updatedIncomeSource: IncomeSource) => void;
+  ) => Promise<void>;
+  addTransaction: (transaction: Transaction) => Promise<void>;
+  updateTransaction: (transaction: Transaction) => Promise<void>;
+  addIncomeSource: (incomeSource: IncomeSource) => Promise<void>;
+  updateIncomeSource: (
+    updatedIncomeSource: IncomeSource
+  ) => Promise<void>;
   addBill: (bill: Bill) => void;
   addGoal: (goal: Goal) => void;
   updateGoal: (updatedGoal: Goal) => void;
 
-  deleteCategory: (id: string) => void;
-  deleteTransaction: (id: string) => void;
-  deleteIncomeSource: (id: string) => void;
+  deleteCategory: (id: string) => Promise<void>;
+  deleteTransaction: (id: string) => Promise<void>;
+  deleteIncomeSource: (id: string) => Promise<void>;
   deleteBill: (id: string) => void;
   deleteGoal: (id: string) => void;
 
-  toggleBillPaid: (id: string) => void;
+  toggleBillPaid: (id: string) => Promise<void>;
 };
 
 const BudgetContext = createContext<BudgetContextType | undefined>(undefined);
 
 export function BudgetProvider({ children }: { children: React.ReactNode }) {
-  const [categories, setCategories] = useState<Category[]>(sampleCategories);
-  const [transactions, setTransactions] =
-    useState<Transaction[]>(sampleTransactions);
+  const supabase = useMemo(() => createClient(), []);
+
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [incomeSources, setIncomeSources] = useState<IncomeSource[]>([]);
   const [bills, setBills] = useState<Bill[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [hasLoadedLocalData, setHasLoadedLocalData] = useState(false);
 
-  /*eslint-disable react-hooks/set-state-in-effect */
+  // Categories, transactions, and income now load from Supabase.
+  // Bills and goals still use localStorage until we migrate them.
   useEffect(() => {
-    const savedCategories = localStorage.getItem("categories");
-    const savedTransactions = localStorage.getItem("transactions");
-    const savedIncomeSources = localStorage.getItem("incomeSources");
+    async function loadBudgetData() {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        console.error("Unable to load budget user:", userError);
+        setCategories([]);
+        setTransactions([]);
+        return;
+      }
+
+      const [
+        categoriesResult,
+        transactionsResult,
+        incomeResult,
+      ] = await Promise.all([
+        supabase
+          .from("categories")
+          .select("id, name, budget")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: true }),
+
+        supabase
+          .from("transactions")
+          .select("id, name, amount, category, date")
+          .eq("user_id", user.id)
+          .order("date", { ascending: false })
+          .order("created_at", { ascending: false }),
+
+        supabase
+          .from("income_sources")
+          .select("id, source, amount, date")
+          .eq("user_id", user.id)
+          .order("date", { ascending: false })
+          .order("created_at", { ascending: false }),
+      ]);
+
+      if (categoriesResult.error) {
+        console.error(
+          "Unable to load categories:",
+          categoriesResult.error
+        );
+        
+        setCategories([]);
+      } else {
+        setCategories(
+          (categoriesResult.data ?? []) as Category[]
+        );
+      }
+
+      if (transactionsResult.error) {
+        console.error(
+          "Unable to load transactions:",
+          transactionsResult.error
+        );
+
+        setTransactions([]);
+      } else {
+        setTransactions(
+          (transactionsResult.data ?? []) as Transaction[]
+        );
+      }
+
+      if (incomeResult.error) {
+        console.error(
+          "Unable to load income sources:",
+          incomeResult.error
+        );
+
+        setIncomeSources([]);
+      } else {
+        setIncomeSources(
+          (incomeResult.data ?? []) as IncomeSource[]
+        );
+      }
+    }
+
+    void loadBudgetData();
+  }, [supabase]);
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
     const savedBills = localStorage.getItem("bills");
     const savedGoals = localStorage.getItem("goals");
-
-    if (savedCategories) {
-      setCategories(JSON.parse(savedCategories));
-    }
-
-    if (savedTransactions) {
-      setTransactions(JSON.parse(savedTransactions));
-    }
-
-    if (savedIncomeSources) {
-      setIncomeSources(JSON.parse(savedIncomeSources));
-    }
 
     if (savedBills) {
       setBills(JSON.parse(savedBills));
@@ -74,124 +154,360 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     if (savedGoals) {
       setGoals(JSON.parse(savedGoals));
     }
+
+    setHasLoadedLocalData(true);
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
-    localStorage.setItem("categories", JSON.stringify(categories));
-  }, [categories]);
-
-  useEffect(() => {
-    localStorage.setItem("transactions", JSON.stringify(transactions));
-  }, [transactions]);
-
-  useEffect(() => {
-    localStorage.setItem("incomeSources", JSON.stringify(incomeSources));
-  }, [incomeSources]);
-
-  useEffect(() => {
+    if (!hasLoadedLocalData) return;
     localStorage.setItem("bills", JSON.stringify(bills));
-  }, [bills]);
+  }, [bills, hasLoadedLocalData]);
 
   useEffect(() => {
+    if (!hasLoadedLocalData) return;
     localStorage.setItem("goals", JSON.stringify(goals));
-  }, [goals]);
+  }, [goals, hasLoadedLocalData]);
 
-  function addCategory(category: Category) {
-    setCategories((currentCategories) => [...currentCategories, category]);
+  async function getCurrentUserId() {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error || !user) {
+      throw new Error("You must be logged in to change budget data.");
+    }
+
+    return user.id;
   }
 
-  function updateCategory(
-    updatedCategory: Category,
-    previousName: string
-  ) {
-    setCategories((currentCategories) =>
-      currentCategories.map((category) =>
-        category.id === updatedCategory.id
-          ? updatedCategory
-          : category
-      )
-    );
+  async function addCategory(category: Category) {
+    try {
+      const userId = await getCurrentUserId();
 
-    if (previousName !== updatedCategory.name) {
-      setTransactions((currentTransactions) =>
-        currentTransactions.map((transaction) =>
-          transaction.category === previousName
-            ? {
-                ...transaction,
-                category: updatedCategory.name,
-              }
-            : transaction
-        )
-      );
+      const { data, error } = await supabase
+        .from("categories")
+        .insert({
+          id: category.id,
+          user_id: userId,
+          name: category.name,
+          budget: category.budget,
+        })
+        .select("id, name, budget")
+        .single();
 
-      setBills((currentBills) =>
-        currentBills.map((bill) =>
-          bill.category === previousName
-            ? {
-                ...bill,
-                category: updatedCategory.name,
-              }
-            : bill
-        )
+      if (error) throw error;
+
+      setCategories((currentCategories) => [
+        ...currentCategories,
+        data as Category,
+      ]);
+    } catch (error) {
+      console.error("Unable to add category:", error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to add category."
       );
     }
   }
 
-  function addTransaction(transaction: Transaction) {
-    setTransactions((currentTransactions) => [
-      ...currentTransactions,
-      transaction,
-    ]);
+  async function updateCategory(
+    updatedCategory: Category,
+    previousName: string
+  ) {
+    try {
+      const userId = await getCurrentUserId();
+
+      const { data, error } = await supabase
+        .from("categories")
+        .update({
+          name: updatedCategory.name,
+          budget: updatedCategory.budget,
+        })
+        .eq("id", updatedCategory.id)
+        .eq("user_id", userId)
+        .select("id, name, budget")
+        .single();
+
+      if (error) throw error;
+
+      const savedCategory = data as Category;
+
+      setCategories((currentCategories) =>
+        currentCategories.map((category) =>
+          category.id === savedCategory.id ? savedCategory : category
+        )
+      );
+
+      if (previousName !== savedCategory.name) {
+        const { error: transactionError } = await supabase
+          .from("transactions")
+          .update({
+            category: savedCategory.name,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("user_id", userId)
+          .eq("category", previousName);
+
+        if (transactionError) throw transactionError;
+
+        setTransactions((currentTransactions) =>
+          currentTransactions.map((transaction) =>
+            transaction.category === previousName
+              ? { ...transaction, category: savedCategory.name }
+              : transaction
+          )
+        );
+
+        // Bills are still local until their Supabase migration.
+        setBills((currentBills) =>
+          currentBills.map((bill) =>
+            bill.category === previousName
+              ? { ...bill, category: savedCategory.name }
+              : bill
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Unable to update category:", error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to update category."
+      );
+    }
   }
 
-  function updateTransaction(updatedTransaction: Transaction) {
-    setTransactions((currentTransactions) =>
-      currentTransactions.map((transaction) =>
-        transaction.id === updatedTransaction.id
-          ? updatedTransaction
-          : transaction
-      )
-    );
+  async function addTransaction(transaction: Transaction) {
+    try {
+      const userId = await getCurrentUserId();
+
+      const { data, error } = await supabase
+        .from("transactions")
+        .insert({
+          id: transaction.id,
+          user_id: userId,
+          name: transaction.name,
+          amount: transaction.amount,
+          category: transaction.category,
+          date: transaction.date,
+        })
+        .select("id, name, amount, category, date")
+        .single();
+
+      if (error) throw error;
+
+      setTransactions((currentTransactions) => [
+        data as Transaction,
+        ...currentTransactions,
+      ]);
+    } catch (error) {
+      console.error("Unable to add transaction:", error);
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to add transaction."
+      );
+    }
   }
 
-  function addIncomeSource(incomeSource: IncomeSource) {
-    setIncomeSources((currentIncomeSources) => [
-      ...currentIncomeSources,
-      incomeSource,
-    ]);
+  async function updateTransaction(
+    updatedTransaction: Transaction
+  ) {
+    try {
+      const userId = await getCurrentUserId();
+
+      const { data, error } = await supabase
+        .from("transactions")
+        .update({
+          name: updatedTransaction.name,
+          amount: updatedTransaction.amount,
+          category: updatedTransaction.category,
+          date: updatedTransaction.date,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", updatedTransaction.id)
+        .eq("user_id", userId)
+        .select("id, name, amount, category, date")
+        .single();
+
+      if (error) throw error;
+
+      const savedTransaction = data as Transaction;
+
+      setTransactions((currentTransactions) =>
+        currentTransactions.map((transaction) =>
+          transaction.id === savedTransaction.id
+            ? savedTransaction
+            : transaction
+        )
+      );
+    } catch (error) {
+      console.error("Unable to update transaction:", error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to update transaction."
+      );
+    }
   }
 
-  function updateIncomeSource(updatedIncomeSource: IncomeSource) {
-    setIncomeSources((currentIncomeSources) =>
-      currentIncomeSources.map((incomeSource) =>
-        incomeSource.id === updatedIncomeSource.id
-          ? updatedIncomeSource
-          : incomeSource
-      )
-    );
+  async function addIncomeSource(incomeSource: IncomeSource) {
+    try {
+      const userId = await getCurrentUserId();
+
+      const { data, error } = await supabase
+        .from("income_sources")
+        .insert({
+          id: incomeSource.id,
+          user_id: userId,
+          source: incomeSource.source,
+          amount: incomeSource.amount,
+          date: incomeSource.date,
+        })
+        .select("id, source, amount, date")
+        .single();
+
+      if (error) throw error;
+
+      setIncomeSources((currentIncomeSources) => [
+        data as IncomeSource,
+        ...currentIncomeSources,
+      ]);
+    } catch (error) {
+      console.error("Unable to add income source:", error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to add income source."
+      );
+    }
+  }
+
+  async function updateIncomeSource(
+    updatedIncomeSource: IncomeSource
+  ) {
+    try {
+      const userId = await getCurrentUserId();
+
+      const { data, error } = await supabase
+        .from("income_sources")
+        .update({
+          source: updatedIncomeSource.source,
+          amount: updatedIncomeSource.amount,
+          date: updatedIncomeSource.date,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", updatedIncomeSource.id)
+        .eq("user_id", userId)
+        .select("id, source, amount, date")
+        .single();
+
+      if (error) throw error;
+
+      const savedIncomeSource = data as IncomeSource;
+
+      setIncomeSources((currentIncomeSources) =>
+        currentIncomeSources.map((incomeSource) =>
+          incomeSource.id === savedIncomeSource.id
+            ? savedIncomeSource
+            : incomeSource
+        )
+      );
+    } catch (error) {
+      console.error("Unable to update income source:", error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to update income source."
+      );
+    }
   }
 
   function addBill(bill: Bill) {
     setBills((currentBills) => [...currentBills, bill]);
   }
 
-  function deleteCategory(id: string) {
-    setCategories((currentCategories) =>
-      currentCategories.filter((category) => category.id !== id)
-    );
+  async function deleteCategory(id: string) {
+    try {
+      const userId = await getCurrentUserId();
+
+      const { error } = await supabase
+        .from("categories")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", userId);
+
+      if (error) throw error;
+
+      setCategories((currentCategories) =>
+        currentCategories.filter((category) => category.id !== id)
+      );
+    } catch (error) {
+      console.error("Unable to delete category:", error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to delete category."
+      );
+    }
   }
 
-  function deleteTransaction(id: string) {
-    setTransactions((currentTransactions) =>
-      currentTransactions.filter((transaction) => transaction.id !== id)
-    );
+  async function deleteTransaction(id: string) {
+    try {
+      const userId = await getCurrentUserId();
+
+      const { error } = await supabase
+        .from("transactions")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", userId);
+
+      if (error) throw error;
+
+      setTransactions((currentTransactions) =>
+        currentTransactions.filter(
+          (transaction) => transaction.id !== id
+        )
+      );
+    } catch (error) {
+      console.error("Unable to delete transaction:", error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to delete transaction."
+      );
+    }
   }
 
-  function deleteIncomeSource(id: string) {
-    setIncomeSources((currentIncomeSources) =>
-      currentIncomeSources.filter((incomeSource) => incomeSource.id !== id)
-    );
+  async function deleteIncomeSource(id: string) {
+    try {
+      const userId = await getCurrentUserId();
+
+      const { error } = await supabase
+        .from("income_sources")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", userId);
+
+      if (error) throw error;
+
+      setIncomeSources((currentIncomeSources) =>
+        currentIncomeSources.filter(
+          (incomeSource) => incomeSource.id !== id
+        )
+      );
+    } catch (error) {
+      console.error("Unable to delete income source:", error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to delete income source."
+      );
+    }
   }
 
   function deleteBill(id: string) {
@@ -200,55 +516,92 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
-  function toggleBillPaid(id: string) {
+  async function toggleBillPaid(id: string) {
     const bill = bills.find((currentBill) => currentBill.id === id);
 
-    if (!bill) {
-      return;
-    }
+    if (!bill) return;
 
-    if (!bill.isPaid) {
-      const transactionId = crypto.randomUUID();
+    try {
+      const userId = await getCurrentUserId();
 
-      const newTransaction: Transaction = {
-        id: transactionId,
-        name: bill.name,
-        amount: -Math.abs(bill.amount),
-        category: bill.category,
-        date: new Date().toISOString().split("T")[0],
-      };
+      if (!bill.isPaid) {
+        const transactionId = crypto.randomUUID();
 
-      setTransactions((currentTransactions) => [
-        ...currentTransactions,
-        newTransaction,
-      ]);
+        const newTransaction: Transaction = {
+          id: transactionId,
+          name: bill.name,
+          amount: -Math.abs(bill.amount),
+          category: bill.category,
+          date: new Date().toISOString().split("T")[0],
+        };
+
+        const { data, error } = await supabase
+          .from("transactions")
+          .insert({
+            ...newTransaction,
+            user_id: userId,
+          })
+          .select("id, name, amount, category, date")
+          .single();
+
+        if (error) throw error;
+
+        setTransactions((currentTransactions) => [
+          data as Transaction,
+          ...currentTransactions,
+        ]);
+
+        setBills((currentBills) =>
+          currentBills.map((currentBill) =>
+            currentBill.id === id
+              ? {
+                  ...currentBill,
+                  isPaid: true,
+                  transactionId,
+                }
+              : currentBill
+          )
+        );
+
+        return;
+      }
+
+      if (bill.transactionId) {
+        const { error } = await supabase
+          .from("transactions")
+          .delete()
+          .eq("id", bill.transactionId)
+          .eq("user_id", userId);
+
+        if (error) throw error;
+
+        setTransactions((currentTransactions) =>
+          currentTransactions.filter(
+            (transaction) =>
+              transaction.id !== bill.transactionId
+          )
+        );
+      }
 
       setBills((currentBills) =>
         currentBills.map((currentBill) =>
           currentBill.id === id
-            ? { ...currentBill, isPaid: true, transactionId }
+            ? {
+                ...currentBill,
+                isPaid: false,
+                transactionId: undefined,
+              }
             : currentBill
         )
       );
-
-      return;
-    }
-
-    if (bill.transactionId) {
-      setTransactions((currentTransactions) =>
-        currentTransactions.filter(
-          (transaction) => transaction.id !== bill.transactionId
-        )
+    } catch (error) {
+      console.error("Unable to toggle bill payment:", error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to update the bill payment."
       );
     }
-
-    setBills((currentBills) =>
-      currentBills.map((currentBill) =>
-        currentBill.id === id
-          ? { ...currentBill, isPaid: false, transactionId: undefined }
-          : currentBill
-      )
-    );
   }
 
   function addGoal(goal: Goal) {
