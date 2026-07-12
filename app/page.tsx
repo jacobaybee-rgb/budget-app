@@ -4,7 +4,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-zinc-950 text-white">
       <section className="mx-auto flex min-h-screen max-w-4xl flex-col items-center justify-center px-6 text-center">
-        <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-emerald-400">
+        <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-blue-400">
           Bell&apos;s Budgeting
         </p>
 
@@ -19,7 +19,7 @@ export default function Home() {
 
         <Link
           href="/dashboard"
-          className="rounded-full bg-emerald-400 px-6 py-3 font-semibold text-zinc-950 transition hover:bg-emerald-300"
+          className="rounded-full bg-blue-400 px-6 py-3 font-semibold text-zinc-950 transition hover:bg-blue-300"
         >
           Start Budgeting Now
         </Link>
