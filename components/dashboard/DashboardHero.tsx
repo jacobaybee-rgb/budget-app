@@ -5,21 +5,14 @@ import CommandCenterHeader from "@/components/dashboard/CommandCenterHeader";
 import { getTimeTheme } from "@/lib/timeTheme";
 import type { FinancialStatus } from "@/lib/dashboard";
 
-type FinancialStatus = {
-  title: string;
-  message: string;
-  textColor: string;
-  dotColor: string;
-};
-
 type DashboardHeroProps = {
-  financialStatus: FinancialStatus;
   notificationCount?: number;
+  financialStatus: FinancialStatus;
 };
 
 export default function DashboardHero({
-  financialStatus,
   notificationCount = 0,
+  financialStatus,
 }: DashboardHeroProps) {
   const currentMonthYear = new Date().toLocaleDateString("en-US", {
     month: "long",
