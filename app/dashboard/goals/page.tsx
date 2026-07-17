@@ -5,7 +5,7 @@ import { useBudget } from "@/context/BudgetContext";
 import GoalsHeader from "@/components/goals/GoalsHeader";
 import GoalsStats from "@/components/goals/GoalsStats";
 import AddGoalForm from "@/components/goals/AddGoalForm";
-import GoalsList from "@/components/goals/GoalsListComponent"
+import GoalsList from "@/components/goals/GoalsListComponent";
 import type { Goal } from "@/types/goal";
 
 export default function GoalsPage() {
@@ -28,16 +28,20 @@ export default function GoalsPage() {
     });
   }
 
-  function handleUpdateGoal(goal: Goal) {
-    updateGoal(goal);
+  async function handleUpdateGoal(goal: Goal): Promise<void> {
+    await updateGoal(goal);
     setEditingGoal(null);
   }
 
-  function handleDeleteGoal(id: string) {
-    deleteGoal(id);
+  async function handleDeleteGoal(id: string) {
+    try {
+      await deleteGoal(id);
 
-    if (editingGoal?.id === id) {
-      setEditingGoal(null);
+      if (editingGoal?.id === id) {
+        setEditingGoal(null);
+      }
+    } catch {
+      // BudgetContext already displays the error.
     }
   }
 
@@ -51,14 +55,18 @@ export default function GoalsPage() {
         <AddGoalForm
           editingGoal={editingGoal}
           onAddGoal={addGoal}
-          onUpdateGoal={handleUpdateGoal}
+          onUpdateGoal={async (goal: Goal): Promise<void> => {
+            await handleUpdateGoal(goal);
+          }}
           onCancelEdit={() => setEditingGoal(null)}
         />
 
         <GoalsList
           goals={goals}
           onEditGoal={handleEditGoal}
-          onDeleteGoal={handleDeleteGoal}
+          onDeleteGoal={(id) => {
+            void handleDeleteGoal(id);
+          }}
         />
       </div>
     </div>
