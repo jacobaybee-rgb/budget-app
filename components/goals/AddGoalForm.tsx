@@ -5,8 +5,8 @@ import type { Goal } from "@/types/goal";
 
 type AddGoalFormProps = {
   editingGoal: Goal | null;
-  onAddGoal: (goal: Goal) => void;
-  onUpdateGoal: (goal: Goal) => void;
+  onAddGoal: (goal: Goal) => Promise<void>;
+  onUpdateGoal: (goal: Goal) => Promise<void>;
   onCancelEdit: () => void;
 };
 
@@ -20,6 +20,7 @@ export default function AddGoalForm({
   const [targetAmount, setTargetAmount] = useState("");
   const [currentAmount, setCurrentAmount] = useState("");
   const [targetDate, setTargetDate] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (editingGoal) {
@@ -30,7 +31,10 @@ export default function AddGoalForm({
       return;
     }
 
-    resetForm();
+    setName("");
+    setTargetAmount("");
+    setCurrentAmount("");
+    setTargetDate("");
   }, [editingGoal]);
 
   function resetForm() {
@@ -40,7 +44,9 @@ export default function AddGoalForm({
     setTargetDate("");
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(
+    event: React.FormEvent<HTMLFormElement>
+  ) {
     event.preventDefault();
 
     const trimmedName = name.trim();
@@ -75,13 +81,21 @@ export default function AddGoalForm({
       targetDate,
     };
 
-    if (editingGoal) {
-      onUpdateGoal(goal);
-    } else {
-      onAddGoal(goal);
-    }
+    try {
+      setIsSubmitting(true);
 
-    resetForm();
+      if (editingGoal) {
+        await onUpdateGoal(goal);
+      } else {
+        await onAddGoal(goal);
+      }
+
+      resetForm();
+    } catch {
+      // BudgetContext already displays the error.
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   function handleCancel() {
@@ -117,7 +131,7 @@ export default function AddGoalForm({
         value={targetAmount}
         onChange={(event) => setTargetAmount(event.target.value)}
         type="number"
-        min="0"
+        min="0.01"
         step="0.01"
         placeholder="Target amount"
         className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 outline-none focus:border-yellow-400"
@@ -152,16 +166,24 @@ export default function AddGoalForm({
 
       <button
         type="submit"
-        className="w-full rounded-xl border border-zinc-700 bg-zinc-900 py-3 font-bold text-yellow-400 transition hover:bg-yellow-400/30"
+        disabled={isSubmitting}
+        className="w-full rounded-xl border border-zinc-700 bg-zinc-900 py-3 font-bold text-yellow-400 transition hover:bg-yellow-400/30 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {editingGoal ? "Save Changes" : "Create Goal"}
+        {isSubmitting
+          ? editingGoal
+            ? "Saving..."
+            : "Creating..."
+          : editingGoal
+            ? "Save Changes"
+            : "Create Goal"}
       </button>
 
       {editingGoal && (
         <button
           type="button"
           onClick={handleCancel}
-          className="w-full rounded-xl border border-zinc-700 py-3 font-semibold text-zinc-300 transition hover:bg-zinc-800"
+          disabled={isSubmitting}
+          className="w-full rounded-xl border border-zinc-700 py-3 font-semibold text-zinc-300 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
           Cancel
         </button>

@@ -21,6 +21,13 @@ type BudgetContextType = {
   bills: Bill[];
   goals: Goal[];
 
+  selectedMonthStart: string;
+  budgetMonthId: string | null;
+  isBudgetLoading: boolean;
+  goToPreviousMonth: () => void;
+  goToNextMonth: () => void;
+  goToCurrentMonth: () => void;
+
   addCategory: (category: Category) => Promise<void>;
   updateCategory: (
     updatedCategory: Category,
@@ -32,20 +39,90 @@ type BudgetContextType = {
   updateIncomeSource: (
     updatedIncomeSource: IncomeSource
   ) => Promise<void>;
-  addBill: (bill: Bill) => void;
-  addGoal: (goal: Goal) => void;
-  updateGoal: (updatedGoal: Goal) => void;
+  addBill: (bill: Bill) => Promise<void>;
+  addGoal: (goal: Goal) => Promise<void>;
+  updateGoal: (updatedGoal: Goal) => Promise<void>;
 
   deleteCategory: (id: string) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
   deleteIncomeSource: (id: string) => Promise<void>;
-  deleteBill: (id: string) => void;
-  deleteGoal: (id: string) => void;
+  deleteBill: (id: string) => Promise<void>;
+  deleteGoal: (id: string) => Promise<void>;
 
   toggleBillPaid: (id: string) => Promise<void>;
 };
 
+type BudgetMonthRecord = {
+  id: string;
+  month_start: string;
+};
+
+type CategoryRecord = {
+  id: string;
+  name: string;
+  budget: number | string;
+};
+
+type CategoryMonthBudgetRecord = {
+  category_id: string;
+  budget: number | string;
+};
+
+type BillRecord = {
+  id: string;
+  name: string;
+  amount: number | string;
+  due_day: number;
+  category: string;
+};
+
+type BillPaymentRecord = {
+  bill_id: string;
+  is_paid: boolean;
+  transaction_id: string | null;
+};
+
 const BudgetContext = createContext<BudgetContextType | undefined>(undefined);
+
+function getCurrentMonthStart() {
+  const now = new Date();
+
+  return [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    "01",
+  ].join("-");
+}
+
+function shiftMonth(monthStart: string, amount: number) {
+  const [year, month] = monthStart.split("-").map(Number);
+  const shiftedDate = new Date(year, month - 1 + amount, 1);
+
+  return [
+    shiftedDate.getFullYear(),
+    String(shiftedDate.getMonth() + 1).padStart(2, "0"),
+    "01",
+  ].join("-");
+}
+
+function getMonthRange(monthStart: string) {
+  return {
+    start: monthStart,
+    end: shiftMonth(monthStart, 1),
+  };
+}
+
+function getDateInsideMonth(monthStart: string, preferredDay: number) {
+  const [year, month] = monthStart.split("-").map(Number);
+  const lastDay = new Date(year, month, 0).getDate();
+  const safeDay = Math.min(Math.max(preferredDay, 1), lastDay);
+
+  return [
+    year,
+    String(month).padStart(2, "0"),
+    String(safeDay).padStart(2, "0"),
+  ].join("-");
+}
 
 export function BudgetProvider({ children }: { children: React.ReactNode }) {
   const supabase = useMemo(() => createClient(), []);
@@ -55,12 +132,21 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
   const [incomeSources, setIncomeSources] = useState<IncomeSource[]>([]);
   const [bills, setBills] = useState<Bill[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
-  const [hasLoadedLocalData, setHasLoadedLocalData] = useState(false);
 
-  // Categories, transactions, and income now load from Supabase.
-  // Bills and goals still use localStorage until we migrate them.
+  const [selectedMonthStart, setSelectedMonthStart] = useState(
+    getCurrentMonthStart
+  );
+  const [budgetMonthId, setBudgetMonthId] = useState<string | null>(
+    null
+  );
+  const [isBudgetLoading, setIsBudgetLoading] = useState(true);
+
   useEffect(() => {
+    let isCancelled = false;
+
     async function loadBudgetData() {
+      setIsBudgetLoading(true);
+
       const {
         data: { user },
         error: userError,
@@ -68,15 +154,28 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
 
       if (userError || !user) {
         console.error("Unable to load budget user:", userError);
-        setCategories([]);
-        setTransactions([]);
+
+        if (!isCancelled) {
+          setCategories([]);
+          setTransactions([]);
+          setIncomeSources([]);
+          setBills([]);
+          setGoals([]);
+          setBudgetMonthId(null);
+          setIsBudgetLoading(false);
+        }
+
         return;
       }
 
+      const { start, end } = getMonthRange(selectedMonthStart);
+
       const [
         categoriesResult,
+        billsResult,
         transactionsResult,
         incomeResult,
+        goalsResult,
       ] = await Promise.all([
         supabase
           .from("categories")
@@ -85,9 +184,17 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
           .order("created_at", { ascending: true }),
 
         supabase
+          .from("bills")
+          .select("id, name, amount, due_day, category")
+          .eq("user_id", user.id)
+          .order("due_day", { ascending: true }),
+
+        supabase
           .from("transactions")
           .select("id, name, amount, category, date")
           .eq("user_id", user.id)
+          .gte("date", start)
+          .lt("date", end)
           .order("date", { ascending: false })
           .order("created_at", { ascending: false }),
 
@@ -95,8 +202,19 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
           .from("income_sources")
           .select("id, source, amount, date")
           .eq("user_id", user.id)
+          .gte("date", start)
+          .lt("date", end)
           .order("date", { ascending: false })
           .order("created_at", { ascending: false }),
+
+        supabase
+          .from("goals")
+          .select(
+            "id, name, target_amount, current_amount, target_date"
+          )
+          .eq("user_id", user.id)
+          .order("target_date", { ascending: true })
+          .order("created_at", { ascending: true }),
       ]);
 
       if (categoriesResult.error) {
@@ -104,24 +222,16 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
           "Unable to load categories:",
           categoriesResult.error
         );
-        
-        setCategories([]);
-      } else {
-        setCategories(
-          (categoriesResult.data ?? []) as Category[]
-        );
+      }
+
+      if (billsResult.error) {
+        console.error("Unable to load bills:", billsResult.error);
       }
 
       if (transactionsResult.error) {
         console.error(
           "Unable to load transactions:",
           transactionsResult.error
-        );
-
-        setTransactions([]);
-      } else {
-        setTransactions(
-          (transactionsResult.data ?? []) as Transaction[]
         );
       }
 
@@ -130,44 +240,204 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
           "Unable to load income sources:",
           incomeResult.error
         );
+      }
 
-        setIncomeSources([]);
-      } else {
+      if (goalsResult.error) {
+        console.error("Unable to load goals:", goalsResult.error);
+      }
+
+      const baseCategories = (
+        (categoriesResult.data ?? []) as CategoryRecord[]
+      );
+
+      const baseBills = (billsResult.data ?? []) as BillRecord[];
+
+      const { data: monthData, error: monthError } = await supabase
+        .from("budget_months")
+        .upsert(
+          {
+            user_id: user.id,
+            month_start: selectedMonthStart,
+            status: "open",
+          },
+          {
+            onConflict: "user_id,month_start",
+            ignoreDuplicates: false,
+          }
+        )
+        .select("id, month_start")
+        .single();
+
+      if (monthError) {
+        console.error("Unable to load budget month:", monthError);
+
+        if (!isCancelled) {
+          setCategories([]);
+          setTransactions([]);
+          setIncomeSources([]);
+          setBills([]);
+          setGoals([]);
+          setBudgetMonthId(null);
+          setIsBudgetLoading(false);
+        }
+
+        return;
+      }
+
+      const budgetMonth = monthData as BudgetMonthRecord;
+
+      if (baseCategories.length > 0) {
+        const { error: categorySeedError } = await supabase
+          .from("category_month_budgets")
+          .upsert(
+            baseCategories.map((category) => ({
+              user_id: user.id,
+              budget_month_id: budgetMonth.id,
+              category_id: category.id,
+              budget: Number(category.budget),
+            })),
+            {
+              onConflict: "budget_month_id,category_id",
+              ignoreDuplicates: true,
+            }
+          );
+
+        if (categorySeedError) {
+          console.error(
+            "Unable to seed monthly category budgets:",
+            categorySeedError
+          );
+        }
+      }
+
+      if (baseBills.length > 0) {
+        const { error: billSeedError } = await supabase
+          .from("bill_payments")
+          .upsert(
+            baseBills.map((bill) => ({
+              user_id: user.id,
+              budget_month_id: budgetMonth.id,
+              bill_id: bill.id,
+              is_paid: false,
+              transaction_id: null,
+              paid_at: null,
+            })),
+            {
+              onConflict: "budget_month_id,bill_id",
+              ignoreDuplicates: true,
+            }
+          );
+
+        if (billSeedError) {
+          console.error(
+            "Unable to seed monthly bill payments:",
+            billSeedError
+          );
+        }
+      }
+
+      const [
+        categoryBudgetsResult,
+        billPaymentsResult,
+      ] = await Promise.all([
+        supabase
+          .from("category_month_budgets")
+          .select("category_id, budget")
+          .eq("user_id", user.id)
+          .eq("budget_month_id", budgetMonth.id),
+
+        supabase
+          .from("bill_payments")
+          .select("bill_id, is_paid, transaction_id")
+          .eq("user_id", user.id)
+          .eq("budget_month_id", budgetMonth.id),
+      ]);
+
+      if (categoryBudgetsResult.error) {
+        console.error(
+          "Unable to load monthly category budgets:",
+          categoryBudgetsResult.error
+        );
+      }
+
+      if (billPaymentsResult.error) {
+        console.error(
+          "Unable to load monthly bill payments:",
+          billPaymentsResult.error
+        );
+      }
+
+      const monthlyBudgetByCategory = new Map(
+        (
+          (categoryBudgetsResult.data ??
+            []) as CategoryMonthBudgetRecord[]
+        ).map((record) => [
+          record.category_id,
+          Number(record.budget),
+        ])
+      );
+
+      const monthlyPaymentByBill = new Map(
+        (
+          (billPaymentsResult.data ?? []) as BillPaymentRecord[]
+        ).map((record) => [record.bill_id, record])
+      );
+
+      const loadedCategories: Category[] = baseCategories.map(
+        (category) => ({
+          id: category.id,
+          name: category.name,
+          budget:
+            monthlyBudgetByCategory.get(category.id) ??
+            Number(category.budget),
+        })
+      );
+
+      const loadedBills: Bill[] = baseBills.map((bill) => {
+        const payment = monthlyPaymentByBill.get(bill.id);
+
+        return {
+          id: bill.id,
+          name: bill.name,
+          amount: Number(bill.amount),
+          dueDay: bill.due_day,
+          category: bill.category,
+          isPaid: payment?.is_paid ?? false,
+          transactionId: payment?.transaction_id ?? undefined,
+        };
+      });
+
+      const loadedGoals: Goal[] = (
+        goalsResult.data ?? []
+      ).map((goal) => ({
+        id: goal.id,
+        name: goal.name,
+        targetAmount: Number(goal.target_amount),
+        currentAmount: Number(goal.current_amount),
+        targetDate: goal.target_date,
+      }));
+
+      if (!isCancelled) {
+        setBudgetMonthId(budgetMonth.id);
+        setCategories(loadedCategories);
+        setBills(loadedBills);
+        setTransactions(
+          (transactionsResult.data ?? []) as Transaction[]
+        );
         setIncomeSources(
           (incomeResult.data ?? []) as IncomeSource[]
         );
+        setGoals(loadedGoals);
+        setIsBudgetLoading(false);
       }
     }
 
     void loadBudgetData();
-  }, [supabase]);
 
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
-    const savedBills = localStorage.getItem("bills");
-    const savedGoals = localStorage.getItem("goals");
-
-    if (savedBills) {
-      setBills(JSON.parse(savedBills));
-    }
-
-    if (savedGoals) {
-      setGoals(JSON.parse(savedGoals));
-    }
-
-    setHasLoadedLocalData(true);
-  }, []);
-  /* eslint-enable react-hooks/set-state-in-effect */
-
-  useEffect(() => {
-    if (!hasLoadedLocalData) return;
-    localStorage.setItem("bills", JSON.stringify(bills));
-  }, [bills, hasLoadedLocalData]);
-
-  useEffect(() => {
-    if (!hasLoadedLocalData) return;
-    localStorage.setItem("goals", JSON.stringify(goals));
-  }, [goals, hasLoadedLocalData]);
+    return () => {
+      isCancelled = true;
+    };
+  }, [selectedMonthStart, supabase]);
 
   async function getCurrentUserId() {
     const {
@@ -182,9 +452,34 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     return user.id;
   }
 
+  function requireBudgetMonthId() {
+    if (!budgetMonthId) {
+      throw new Error("The selected budget month is not ready yet.");
+    }
+
+    return budgetMonthId;
+  }
+
+  function goToPreviousMonth() {
+    setSelectedMonthStart((currentMonth) =>
+      shiftMonth(currentMonth, -1)
+    );
+  }
+
+  function goToNextMonth() {
+    setSelectedMonthStart((currentMonth) =>
+      shiftMonth(currentMonth, 1)
+    );
+  }
+
+  function goToCurrentMonth() {
+    setSelectedMonthStart(getCurrentMonthStart());
+  }
+
   async function addCategory(category: Category) {
     try {
       const userId = await getCurrentUserId();
+      const monthId = requireBudgetMonthId();
 
       const { data, error } = await supabase
         .from("categories")
@@ -199,12 +494,36 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
 
+      const { error: monthlyBudgetError } = await supabase
+        .from("category_month_budgets")
+        .insert({
+          user_id: userId,
+          budget_month_id: monthId,
+          category_id: data.id,
+          budget: category.budget,
+        });
+
+      if (monthlyBudgetError) {
+        await supabase
+          .from("categories")
+          .delete()
+          .eq("id", data.id)
+          .eq("user_id", userId);
+
+        throw monthlyBudgetError;
+      }
+
       setCategories((currentCategories) => [
         ...currentCategories,
-        data as Category,
+        {
+          id: data.id,
+          name: data.name,
+          budget: Number(category.budget),
+        },
       ]);
     } catch (error) {
       console.error("Unable to add category:", error);
+
       alert(
         error instanceof Error
           ? error.message
@@ -219,12 +538,15 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
   ) {
     try {
       const userId = await getCurrentUserId();
+      const monthId = requireBudgetMonthId();
+      const { start, end } = getMonthRange(selectedMonthStart);
 
       const { data, error } = await supabase
         .from("categories")
         .update({
           name: updatedCategory.name,
           budget: updatedCategory.budget,
+          updated_at: new Date().toISOString(),
         })
         .eq("id", updatedCategory.id)
         .eq("user_id", userId)
@@ -233,7 +555,28 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
 
-      const savedCategory = data as Category;
+      const { error: monthlyBudgetError } = await supabase
+        .from("category_month_budgets")
+        .upsert(
+          {
+            user_id: userId,
+            budget_month_id: monthId,
+            category_id: updatedCategory.id,
+            budget: updatedCategory.budget,
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: "budget_month_id,category_id",
+          }
+        );
+
+      if (monthlyBudgetError) throw monthlyBudgetError;
+
+      const savedCategory: Category = {
+        id: data.id,
+        name: data.name,
+        budget: Number(updatedCategory.budget),
+      };
 
       setCategories((currentCategories) =>
         currentCategories.map((category) =>
@@ -249,9 +592,22 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
             updated_at: new Date().toISOString(),
           })
           .eq("user_id", userId)
-          .eq("category", previousName);
+          .eq("category", previousName)
+          .gte("date", start)
+          .lt("date", end);
 
         if (transactionError) throw transactionError;
+
+        const { error: billsError } = await supabase
+          .from("bills")
+          .update({
+            category: savedCategory.name,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("user_id", userId)
+          .eq("category", previousName);
+
+        if (billsError) throw billsError;
 
         setTransactions((currentTransactions) =>
           currentTransactions.map((transaction) =>
@@ -261,7 +617,6 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
           )
         );
 
-        // Bills are still local until their Supabase migration.
         setBills((currentBills) =>
           currentBills.map((bill) =>
             bill.category === previousName
@@ -272,6 +627,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error("Unable to update category:", error);
+
       alert(
         error instanceof Error
           ? error.message
@@ -299,10 +655,14 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
 
-      setTransactions((currentTransactions) => [
-        data as Transaction,
-        ...currentTransactions,
-      ]);
+      const { start, end } = getMonthRange(selectedMonthStart);
+
+      if (data.date >= start && data.date < end) {
+        setTransactions((currentTransactions) => [
+          data as Transaction,
+          ...currentTransactions,
+        ]);
+      }
     } catch (error) {
       console.error("Unable to add transaction:", error);
 
@@ -337,16 +697,22 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
 
       const savedTransaction = data as Transaction;
+      const { start, end } = getMonthRange(selectedMonthStart);
+      const belongsToSelectedMonth =
+        savedTransaction.date >= start && savedTransaction.date < end;
 
-      setTransactions((currentTransactions) =>
-        currentTransactions.map((transaction) =>
-          transaction.id === savedTransaction.id
-            ? savedTransaction
-            : transaction
-        )
-      );
+      setTransactions((currentTransactions) => {
+        const withoutUpdatedTransaction = currentTransactions.filter(
+          (transaction) => transaction.id !== savedTransaction.id
+        );
+
+        return belongsToSelectedMonth
+          ? [savedTransaction, ...withoutUpdatedTransaction]
+          : withoutUpdatedTransaction;
+      });
     } catch (error) {
       console.error("Unable to update transaction:", error);
+
       alert(
         error instanceof Error
           ? error.message
@@ -373,12 +739,17 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
 
-      setIncomeSources((currentIncomeSources) => [
-        data as IncomeSource,
-        ...currentIncomeSources,
-      ]);
+      const { start, end } = getMonthRange(selectedMonthStart);
+
+      if (data.date >= start && data.date < end) {
+        setIncomeSources((currentIncomeSources) => [
+          data as IncomeSource,
+          ...currentIncomeSources,
+        ]);
+      }
     } catch (error) {
       console.error("Unable to add income source:", error);
+
       alert(
         error instanceof Error
           ? error.message
@@ -409,16 +780,22 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
 
       const savedIncomeSource = data as IncomeSource;
+      const { start, end } = getMonthRange(selectedMonthStart);
+      const belongsToSelectedMonth =
+        savedIncomeSource.date >= start && savedIncomeSource.date < end;
 
-      setIncomeSources((currentIncomeSources) =>
-        currentIncomeSources.map((incomeSource) =>
-          incomeSource.id === savedIncomeSource.id
-            ? savedIncomeSource
-            : incomeSource
-        )
-      );
+      setIncomeSources((currentIncomeSources) => {
+        const withoutUpdatedIncome = currentIncomeSources.filter(
+          (incomeSource) => incomeSource.id !== savedIncomeSource.id
+        );
+
+        return belongsToSelectedMonth
+          ? [savedIncomeSource, ...withoutUpdatedIncome]
+          : withoutUpdatedIncome;
+      });
     } catch (error) {
       console.error("Unable to update income source:", error);
+
       alert(
         error instanceof Error
           ? error.message
@@ -427,8 +804,76 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  function addBill(bill: Bill) {
-    setBills((currentBills) => [...currentBills, bill]);
+  async function addBill(bill: Bill) {
+    try {
+      const userId = await getCurrentUserId();
+      const monthId = requireBudgetMonthId();
+
+      const { data, error } = await supabase
+        .from("bills")
+        .insert({
+          id: bill.id,
+          user_id: userId,
+          name: bill.name,
+          amount: bill.amount,
+          due_day: bill.dueDay,
+          category: bill.category,
+          is_paid: false,
+          transaction_id: null,
+        })
+        .select("id, name, amount, due_day, category")
+        .single();
+
+      if (error) throw error;
+
+      const { error: paymentError } = await supabase
+        .from("bill_payments")
+        .insert({
+          user_id: userId,
+          budget_month_id: monthId,
+          bill_id: data.id,
+          is_paid: false,
+          transaction_id: null,
+          paid_at: null,
+        });
+
+      if (paymentError) {
+        await supabase
+          .from("bills")
+          .delete()
+          .eq("id", data.id)
+          .eq("user_id", userId);
+
+        throw paymentError;
+      }
+
+      const savedBill: Bill = {
+        id: data.id,
+        name: data.name,
+        amount: Number(data.amount),
+        dueDay: data.due_day,
+        category: data.category,
+        isPaid: false,
+        transactionId: undefined,
+      };
+
+      setBills((currentBills) =>
+        [...currentBills, savedBill].sort(
+          (firstBill, secondBill) =>
+            firstBill.dueDay - secondBill.dueDay
+        )
+      );
+    } catch (error) {
+      console.error("Unable to add bill:", error);
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to add bill."
+      );
+
+      throw error;
+    }
   }
 
   async function deleteCategory(id: string) {
@@ -448,6 +893,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
       );
     } catch (error) {
       console.error("Unable to delete category:", error);
+
       alert(
         error instanceof Error
           ? error.message
@@ -473,8 +919,21 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
           (transaction) => transaction.id !== id
         )
       );
+
+      setBills((currentBills) =>
+        currentBills.map((bill) =>
+          bill.transactionId === id
+            ? {
+                ...bill,
+                isPaid: false,
+                transactionId: undefined,
+              }
+            : bill
+        )
+      );
     } catch (error) {
       console.error("Unable to delete transaction:", error);
+
       alert(
         error instanceof Error
           ? error.message
@@ -502,6 +961,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
       );
     } catch (error) {
       console.error("Unable to delete income source:", error);
+
       alert(
         error instanceof Error
           ? error.message
@@ -510,10 +970,53 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  function deleteBill(id: string) {
-    setBills((currentBills) =>
-      currentBills.filter((bill) => bill.id !== id)
-    );
+  async function deleteBill(id: string) {
+    try {
+      const userId = await getCurrentUserId();
+
+      const paymentTransactionIds = bills
+        .filter((bill) => bill.id === id && bill.transactionId)
+        .map((bill) => bill.transactionId as string);
+
+      if (paymentTransactionIds.length > 0) {
+        const { error: transactionError } = await supabase
+          .from("transactions")
+          .delete()
+          .in("id", paymentTransactionIds)
+          .eq("user_id", userId);
+
+        if (transactionError) throw transactionError;
+      }
+
+      const { error } = await supabase
+        .from("bills")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", userId);
+
+      if (error) throw error;
+
+      setBills((currentBills) =>
+        currentBills.filter((bill) => bill.id !== id)
+      );
+
+      if (paymentTransactionIds.length > 0) {
+        setTransactions((currentTransactions) =>
+          currentTransactions.filter(
+            (transaction) =>
+              !paymentTransactionIds.includes(transaction.id)
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Unable to delete bill:", error);
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to delete bill."
+      );
+    }
   }
 
   async function toggleBillPaid(id: string) {
@@ -523,37 +1026,74 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const userId = await getCurrentUserId();
+      const monthId = requireBudgetMonthId();
 
       if (!bill.isPaid) {
         const transactionId = crypto.randomUUID();
+        const transactionDate = getDateInsideMonth(
+          selectedMonthStart,
+          bill.dueDay
+        );
 
         const newTransaction: Transaction = {
           id: transactionId,
           name: bill.name,
           amount: -Math.abs(bill.amount),
           category: bill.category,
-          date: new Date().toISOString().split("T")[0],
+          date: transactionDate,
         };
 
-        const { data, error } = await supabase
-          .from("transactions")
-          .insert({
-            ...newTransaction,
-            user_id: userId,
-          })
-          .select("id, name, amount, category, date")
-          .single();
+        const { data: transactionData, error: transactionError } =
+          await supabase
+            .from("transactions")
+            .insert({
+              id: newTransaction.id,
+              user_id: userId,
+              name: newTransaction.name,
+              amount: newTransaction.amount,
+              category: newTransaction.category,
+              date: newTransaction.date,
+            })
+            .select("id, name, amount, category, date")
+            .single();
 
-        if (error) throw error;
+        if (transactionError) throw transactionError;
+
+        const { error: paymentError } = await supabase
+          .from("bill_payments")
+          .upsert(
+            {
+              user_id: userId,
+              budget_month_id: monthId,
+              bill_id: bill.id,
+              transaction_id: transactionId,
+              is_paid: true,
+              paid_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+            {
+              onConflict: "budget_month_id,bill_id",
+            }
+          );
+
+        if (paymentError) {
+          await supabase
+            .from("transactions")
+            .delete()
+            .eq("id", transactionId)
+            .eq("user_id", userId);
+
+          throw paymentError;
+        }
 
         setTransactions((currentTransactions) => [
-          data as Transaction,
+          transactionData as Transaction,
           ...currentTransactions,
         ]);
 
         setBills((currentBills) =>
           currentBills.map((currentBill) =>
-            currentBill.id === id
+            currentBill.id === bill.id
               ? {
                   ...currentBill,
                   isPaid: true,
@@ -566,26 +1106,33 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      const { error: paymentError } = await supabase
+        .from("bill_payments")
+        .update({
+          transaction_id: null,
+          is_paid: false,
+          paid_at: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", userId)
+        .eq("budget_month_id", monthId)
+        .eq("bill_id", bill.id);
+
+      if (paymentError) throw paymentError;
+
       if (bill.transactionId) {
-        const { error } = await supabase
+        const { error: transactionError } = await supabase
           .from("transactions")
           .delete()
           .eq("id", bill.transactionId)
           .eq("user_id", userId);
 
-        if (error) throw error;
-
-        setTransactions((currentTransactions) =>
-          currentTransactions.filter(
-            (transaction) =>
-              transaction.id !== bill.transactionId
-          )
-        );
+        if (transactionError) throw transactionError;
       }
 
       setBills((currentBills) =>
         currentBills.map((currentBill) =>
-          currentBill.id === id
+          currentBill.id === bill.id
             ? {
                 ...currentBill,
                 isPaid: false,
@@ -594,8 +1141,18 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
             : currentBill
         )
       );
+
+      if (bill.transactionId) {
+        setTransactions((currentTransactions) =>
+          currentTransactions.filter(
+            (transaction) =>
+              transaction.id !== bill.transactionId
+          )
+        );
+      }
     } catch (error) {
       console.error("Unable to toggle bill payment:", error);
+
       alert(
         error instanceof Error
           ? error.message
@@ -604,22 +1161,131 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  function addGoal(goal: Goal) {
-    setGoals((currentGoals) => [...currentGoals, goal]);
+  async function addGoal(goal: Goal) {
+    try {
+      const userId = await getCurrentUserId();
+
+      const { data, error } = await supabase
+        .from("goals")
+        .insert({
+          id: goal.id,
+          user_id: userId,
+          name: goal.name,
+          target_amount: goal.targetAmount,
+          current_amount: goal.currentAmount,
+          target_date: goal.targetDate,
+        })
+        .select(
+          "id, name, target_amount, current_amount, target_date"
+        )
+        .single();
+
+      if (error) throw error;
+
+      const savedGoal: Goal = {
+        id: data.id,
+        name: data.name,
+        targetAmount: Number(data.target_amount),
+        currentAmount: Number(data.current_amount),
+        targetDate: data.target_date,
+      };
+
+      setGoals((currentGoals) =>
+        [...currentGoals, savedGoal].sort((firstGoal, secondGoal) =>
+          firstGoal.targetDate.localeCompare(secondGoal.targetDate)
+        )
+      );
+    } catch (error) {
+      console.error("Unable to add goal:", error);
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to add goal."
+      );
+
+      throw error;
+    }
   }
 
-  function updateGoal(updatedGoal: Goal) {
-    setGoals((currentGoals) =>
-      currentGoals.map((goal) =>
-        goal.id === updatedGoal.id ? updatedGoal : goal
-      )
-    );
+  async function updateGoal(updatedGoal: Goal) {
+    try {
+      const userId = await getCurrentUserId();
+
+      const { data, error } = await supabase
+        .from("goals")
+        .update({
+          name: updatedGoal.name,
+          target_amount: updatedGoal.targetAmount,
+          current_amount: updatedGoal.currentAmount,
+          target_date: updatedGoal.targetDate,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", updatedGoal.id)
+        .eq("user_id", userId)
+        .select(
+          "id, name, target_amount, current_amount, target_date"
+        )
+        .single();
+
+      if (error) throw error;
+
+      const savedGoal: Goal = {
+        id: data.id,
+        name: data.name,
+        targetAmount: Number(data.target_amount),
+        currentAmount: Number(data.current_amount),
+        targetDate: data.target_date,
+      };
+
+      setGoals((currentGoals) =>
+        currentGoals
+          .map((goal) =>
+            goal.id === savedGoal.id ? savedGoal : goal
+          )
+          .sort((firstGoal, secondGoal) =>
+            firstGoal.targetDate.localeCompare(secondGoal.targetDate)
+          )
+      );
+    } catch (error) {
+      console.error("Unable to update goal:", error);
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to update goal."
+      );
+
+      throw error;
+    }
   }
 
-  function deleteGoal(id: string) {
-    setGoals((currentGoals) =>
-      currentGoals.filter((goal) => goal.id !== id)
-    );
+  async function deleteGoal(id: string) {
+    try {
+      const userId = await getCurrentUserId();
+
+      const { error } = await supabase
+        .from("goals")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", userId);
+
+      if (error) throw error;
+
+      setGoals((currentGoals) =>
+        currentGoals.filter((goal) => goal.id !== id)
+      );
+    } catch (error) {
+      console.error("Unable to delete goal:", error);
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to delete goal."
+      );
+
+      throw error;
+    }
   }
 
   return (
@@ -630,6 +1296,13 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         incomeSources,
         bills,
         goals,
+
+        selectedMonthStart,
+        budgetMonthId,
+        isBudgetLoading,
+        goToPreviousMonth,
+        goToNextMonth,
+        goToCurrentMonth,
 
         addCategory,
         updateCategory,

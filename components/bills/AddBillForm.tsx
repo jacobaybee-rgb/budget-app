@@ -11,7 +11,7 @@ export default function AddBillForm() {
   const [dueDay, setDueDay] = useState("");
   const [category, setCategory] = useState("");
 
-  function handleSubmit(event: React.FormEvent) {
+  async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
 
     const trimmedName = name.trim();
@@ -38,19 +38,23 @@ export default function AddBillForm() {
       return;
     }
 
-    addBill({
-      id: crypto.randomUUID(),
-      name: trimmedName,
-      amount: amountNumber,
-      dueDay: dueDayNumber,
-      category,
-      isPaid: false,
-    });
+    try {
+      await addBill({
+        id: crypto.randomUUID(),
+        name: trimmedName,
+        amount: amountNumber,
+        dueDay: dueDayNumber,
+        category,
+        isPaid: false,
+      });
 
-    setName("");
-    setAmount("");
-    setDueDay("");
-    setCategory("");
+      setName("");
+      setAmount("");
+      setDueDay("");
+      setCategory("");
+    } catch {
+      // BudgetContext already displays the error message.
+    }
   }
 
   return (
@@ -102,7 +106,7 @@ export default function AddBillForm() {
 
         <button
           type="submit"
-          className="w-full rounded-xl border border-zinc-700 bg-zinc-1000 px-4 py-3 font-semibold text-red-400 transition hover:bg-red-400/50"
+          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 font-semibold text-red-400 transition hover:bg-red-400/50"
         >
           Add Bill
         </button>
