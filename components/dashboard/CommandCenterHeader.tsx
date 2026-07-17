@@ -94,7 +94,7 @@ export default function CommandCenterHeader() {
       </h1>
 
       <p className="mt-3 text-lg text-white drop-shadow">
-        {today}
+        Date: {today}
       </p>
     </div>
   );

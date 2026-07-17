@@ -4,6 +4,7 @@ import { Bell, CalendarDays } from "lucide-react";
 import CommandCenterHeader from "@/components/dashboard/CommandCenterHeader";
 import { getTimeTheme } from "@/lib/timeTheme";
 import type { FinancialStatus } from "@/lib/dashboard";
+import MonthSelector from "@/components/budget/MonthSelector";
 
 type DashboardHeroProps = {
   notificationCount?: number;
@@ -62,6 +63,14 @@ export default function DashboardHero({
         </div>
 
         <CommandCenterHeader />
+
+        <div className="mt-8">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.25em] text-white/70">
+            Budget Month
+          </p>
+
+          <MonthSelector />
+        </div>
 
         {/* Financial status */}
         <div className="relative z-20 mt-8 w-full max-w-sm rounded-2xl border border-white/15 bg-black/50 p-6 shadow-xl backdrop-blur-md 2xl:absolute 2xl:right-8 2xl:top-24 2xl:mt-0 2xl:w-80">

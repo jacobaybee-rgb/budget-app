@@ -7,6 +7,7 @@ import IncomeHistory from "@/components/income/IncomeHistory";
 import PageHeader from "@/components/ui/PageHeader";
 import PageSplitLayout from "@/components/ui/PageSplitLayout";
 import PageStatCard from "@/components/ui/PageStatCard";
+import MonthSelector from "@/components/budget/MonthSelector";
 
 export default function IncomePage() {
   const {
@@ -49,13 +50,17 @@ export default function IncomePage() {
   }
 
   return (
-    <div className="space-y-8 px-8 py-8">
+    <div className="space-y-10 px-8 py-8">
       <PageHeader
         eyebrow="Income Center"
         title="Income"
         description="Track where your money comes from and how much you have coming in."
         color="green"
       />
+
+      <div className="flex justify-center">
+        <MonthSelector />
+      </div>
 
       <div className="grid gap-6 md:grid-cols-3">
         <PageStatCard

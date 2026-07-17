@@ -7,6 +7,7 @@ import PageStatCard from "@/components/ui/PageStatCard";
 import PageSplitLayout from "@/components/ui/PageSplitLayout";
 import CategoryForm from "@/components/categories/CategoryForm";
 import CategoryManager from "@/components/categories/CategoryManager";
+import MonthSelector from "@/components/budget/MonthSelector";
 
 export default function CategoriesPage() {
   const {
@@ -53,13 +54,17 @@ export default function CategoriesPage() {
   }
 
   return (
-    <div className="space-y-8 px-8 py-8">
+    <div className="space-y-10 px-8 py-8">
       <PageHeader
         eyebrow="Category Page"
         title="Categories"
         description="Create categories and budgets so you know where your money should be going."
         color="purple"
       />
+
+      <div className="flex justify-center">
+        <MonthSelector />
+      </div>
 
       <div className="grid gap-6 md:grid-cols-3">
         <PageStatCard

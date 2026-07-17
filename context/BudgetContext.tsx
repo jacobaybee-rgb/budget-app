@@ -11,7 +11,10 @@ import { createClient } from "@/lib/supabase/client";
 import type { Bill } from "@/types/bill";
 import type { Category } from "@/types/category";
 import type { Goal } from "@/types/goal";
-import type { IncomeSource } from "@/types/income";
+import type {
+  IncomeSource,
+  IncomeTemplate,
+} from "@/types/income";
 import type { Transaction } from "@/types/transaction";
 
 type BudgetContextType = {
@@ -36,6 +39,9 @@ type BudgetContextType = {
   addTransaction: (transaction: Transaction) => Promise<void>;
   updateTransaction: (transaction: Transaction) => Promise<void>;
   addIncomeSource: (incomeSource: IncomeSource) => Promise<void>;
+  addIncomeTemplate: (
+    incomeTemplate: IncomeTemplate
+  ) => Promise<void>;
   updateIncomeSource: (
     updatedIncomeSource: IncomeSource
   ) => Promise<void>;
@@ -66,6 +72,15 @@ type CategoryRecord = {
 type CategoryMonthBudgetRecord = {
   category_id: string;
   budget: number | string;
+};
+
+type IncomeTemplateRecord = {
+  id: string;
+  source: string;
+  amount: number | string;
+  recurring_day: number;
+  start_month: string;
+  is_active: boolean;
 };
 
 type BillRecord = {
@@ -112,7 +127,10 @@ function getMonthRange(monthStart: string) {
   };
 }
 
-function getDateInsideMonth(monthStart: string, preferredDay: number) {
+function getDateInsideMonth(
+  monthStart: string,
+  preferredDay: number
+) {
   const [year, month] = monthStart.split("-").map(Number);
   const lastDay = new Date(year, month, 0).getDate();
   const safeDay = Math.min(Math.max(preferredDay, 1), lastDay);
@@ -122,6 +140,15 @@ function getDateInsideMonth(monthStart: string, preferredDay: number) {
     String(month).padStart(2, "0"),
     String(safeDay).padStart(2, "0"),
   ].join("-");
+}
+
+function moveDateToMonth(date: string, monthStart: string) {
+  const preferredDay = Number(date.split("-")[2]);
+
+  return getDateInsideMonth(
+    monthStart,
+    Number.isFinite(preferredDay) ? preferredDay : 1
+  );
 }
 
 export function BudgetProvider({ children }: { children: React.ReactNode }) {
@@ -140,6 +167,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     null
   );
   const [isBudgetLoading, setIsBudgetLoading] = useState(true);
+
 
   useEffect(() => {
     let isCancelled = false;
@@ -175,6 +203,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         billsResult,
         transactionsResult,
         incomeResult,
+        incomeTemplatesResult,
         goalsResult,
       ] = await Promise.all([
         supabase
@@ -200,12 +229,21 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
 
         supabase
           .from("income_sources")
-          .select("id, source, amount, date")
+          .select("id, source, amount, date, income_template_id")
           .eq("user_id", user.id)
           .gte("date", start)
           .lt("date", end)
           .order("date", { ascending: false })
           .order("created_at", { ascending: false }),
+
+        supabase
+          .from("income_templates")
+          .select(
+            "id, source, amount, recurring_day, start_month, is_active"
+          )
+          .eq("user_id", user.id)
+          .eq("is_active", true)
+          .lte("start_month", selectedMonthStart),
 
         supabase
           .from("goals")
@@ -242,8 +280,70 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         );
       }
 
+      if (incomeTemplatesResult.error) {
+        console.error(
+          "Unable to load recurring income templates:",
+          incomeTemplatesResult.error
+        );
+      }
+
       if (goalsResult.error) {
         console.error("Unable to load goals:", goalsResult.error);
+      }
+
+      const activeIncomeTemplates = (
+        incomeTemplatesResult.data ?? []
+      ) as IncomeTemplateRecord[];
+
+      if (activeIncomeTemplates.length > 0) {
+        const recurringIncomeRows = activeIncomeTemplates.map(
+          (template) => ({
+            id: crypto.randomUUID(),
+            user_id: user.id,
+            income_template_id: template.id,
+            source: template.source,
+            amount: Number(template.amount),
+            date: getDateInsideMonth(
+              selectedMonthStart,
+              template.recurring_day
+            ),
+          })
+        );
+
+        const { error: recurringIncomeError } = await supabase
+          .from("income_sources")
+          .upsert(recurringIncomeRows, {
+            onConflict: "income_template_id,date",
+            ignoreDuplicates: true,
+          });
+
+        if (recurringIncomeError) {
+          console.error(
+            "Unable to generate recurring income:",
+            recurringIncomeError
+          );
+        }
+      }
+
+      const {
+        data: refreshedIncomeData,
+        error: refreshedIncomeError,
+      } = await supabase
+        .from("income_sources")
+        .select(
+          "id, source, amount, date, income_template_id"
+        )
+        .eq("user_id", user.id)
+        .gte("date", start)
+        .lt("date", end)
+        .order("date", { ascending: false })
+        .order("created_at", { ascending: false });
+
+      if (refreshedIncomeError) {
+        console.error(
+          "Unable to refresh generated income:",
+          refreshedIncomeError
+        );
       }
 
       const baseCategories = (
@@ -425,7 +525,14 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
           (transactionsResult.data ?? []) as Transaction[]
         );
         setIncomeSources(
-          (incomeResult.data ?? []) as IncomeSource[]
+          (refreshedIncomeData ?? []).map((income) => ({
+            id: income.id,
+            source: income.source,
+            amount: Number(income.amount),
+            date: income.date,
+            incomeTemplateId:
+              income.income_template_id ?? undefined,
+          }))
         );
         setGoals(loadedGoals);
         setIsBudgetLoading(false);
@@ -640,6 +747,11 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     try {
       const userId = await getCurrentUserId();
 
+      const transactionDate = moveDateToMonth(
+        transaction.date,
+        selectedMonthStart
+      );
+
       const { data, error } = await supabase
         .from("transactions")
         .insert({
@@ -648,21 +760,17 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
           name: transaction.name,
           amount: transaction.amount,
           category: transaction.category,
-          date: transaction.date,
+          date: transactionDate,
         })
         .select("id, name, amount, category, date")
         .single();
 
       if (error) throw error;
 
-      const { start, end } = getMonthRange(selectedMonthStart);
-
-      if (data.date >= start && data.date < end) {
-        setTransactions((currentTransactions) => [
-          data as Transaction,
-          ...currentTransactions,
-        ]);
-      }
+      setTransactions((currentTransactions) => [
+        data as Transaction,
+        ...currentTransactions,
+      ]);
     } catch (error) {
       console.error("Unable to add transaction:", error);
 
@@ -680,13 +788,18 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     try {
       const userId = await getCurrentUserId();
 
+      const transactionDate = moveDateToMonth(
+        updatedTransaction.date,
+        selectedMonthStart
+      );
+
       const { data, error } = await supabase
         .from("transactions")
         .update({
           name: updatedTransaction.name,
           amount: updatedTransaction.amount,
           category: updatedTransaction.category,
-          date: updatedTransaction.date,
+          date: transactionDate,
           updated_at: new Date().toISOString(),
         })
         .eq("id", updatedTransaction.id)
@@ -697,19 +810,14 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
 
       const savedTransaction = data as Transaction;
-      const { start, end } = getMonthRange(selectedMonthStart);
-      const belongsToSelectedMonth =
-        savedTransaction.date >= start && savedTransaction.date < end;
 
-      setTransactions((currentTransactions) => {
-        const withoutUpdatedTransaction = currentTransactions.filter(
-          (transaction) => transaction.id !== savedTransaction.id
-        );
-
-        return belongsToSelectedMonth
-          ? [savedTransaction, ...withoutUpdatedTransaction]
-          : withoutUpdatedTransaction;
-      });
+      setTransactions((currentTransactions) =>
+        currentTransactions.map((transaction) =>
+          transaction.id === savedTransaction.id
+            ? savedTransaction
+            : transaction
+        )
+      );
     } catch (error) {
       console.error("Unable to update transaction:", error);
 
@@ -725,6 +833,11 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     try {
       const userId = await getCurrentUserId();
 
+      const incomeDate = moveDateToMonth(
+        incomeSource.date,
+        selectedMonthStart
+      );
+
       const { data, error } = await supabase
         .from("income_sources")
         .insert({
@@ -732,21 +845,17 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
           user_id: userId,
           source: incomeSource.source,
           amount: incomeSource.amount,
-          date: incomeSource.date,
+          date: incomeDate,
         })
         .select("id, source, amount, date")
         .single();
 
       if (error) throw error;
 
-      const { start, end } = getMonthRange(selectedMonthStart);
-
-      if (data.date >= start && data.date < end) {
-        setIncomeSources((currentIncomeSources) => [
-          data as IncomeSource,
-          ...currentIncomeSources,
-        ]);
-      }
+      setIncomeSources((currentIncomeSources) => [
+        data as IncomeSource,
+        ...currentIncomeSources,
+      ]);
     } catch (error) {
       console.error("Unable to add income source:", error);
 
@@ -758,18 +867,106 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  async function addIncomeTemplate(
+    incomeTemplate: IncomeTemplate
+  ) {
+    try {
+      const userId = await getCurrentUserId();
+
+      const { data: templateData, error: templateError } =
+        await supabase
+          .from("income_templates")
+          .insert({
+            id: incomeTemplate.id,
+            user_id: userId,
+            source: incomeTemplate.source,
+            amount: incomeTemplate.amount,
+            frequency: incomeTemplate.frequency,
+            recurring_day: incomeTemplate.recurringDay,
+            start_month: selectedMonthStart,
+            is_active: incomeTemplate.isActive,
+          })
+          .select(
+            "id, source, amount, recurring_day, start_month, is_active"
+          )
+          .single();
+
+      if (templateError) throw templateError;
+
+      const recurringDate = getDateInsideMonth(
+        selectedMonthStart,
+        templateData.recurring_day
+      );
+
+      const { data: incomeData, error: incomeError } =
+        await supabase
+          .from("income_sources")
+          .insert({
+            id: crypto.randomUUID(),
+            user_id: userId,
+            income_template_id: templateData.id,
+            source: templateData.source,
+            amount: Number(templateData.amount),
+            date: recurringDate,
+          })
+          .select(
+            "id, source, amount, date, income_template_id"
+          )
+          .single();
+
+      if (incomeError) {
+        await supabase
+          .from("income_templates")
+          .delete()
+          .eq("id", templateData.id)
+          .eq("user_id", userId);
+
+        throw incomeError;
+      }
+
+      const savedIncome: IncomeSource = {
+        id: incomeData.id,
+        source: incomeData.source,
+        amount: Number(incomeData.amount),
+        date: incomeData.date,
+        incomeTemplateId:
+          incomeData.income_template_id ?? undefined,
+      };
+
+      setIncomeSources((currentIncomeSources) => [
+        savedIncome,
+        ...currentIncomeSources,
+      ]);
+    } catch (error) {
+      console.error("Unable to add recurring income:", error);
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to add recurring income."
+      );
+
+      throw error;
+    }
+  }
+
   async function updateIncomeSource(
     updatedIncomeSource: IncomeSource
   ) {
     try {
       const userId = await getCurrentUserId();
 
+      const incomeDate = moveDateToMonth(
+        updatedIncomeSource.date,
+        selectedMonthStart
+      );
+
       const { data, error } = await supabase
         .from("income_sources")
         .update({
           source: updatedIncomeSource.source,
           amount: updatedIncomeSource.amount,
-          date: updatedIncomeSource.date,
+          date: incomeDate,
           updated_at: new Date().toISOString(),
         })
         .eq("id", updatedIncomeSource.id)
@@ -780,19 +977,14 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
 
       const savedIncomeSource = data as IncomeSource;
-      const { start, end } = getMonthRange(selectedMonthStart);
-      const belongsToSelectedMonth =
-        savedIncomeSource.date >= start && savedIncomeSource.date < end;
 
-      setIncomeSources((currentIncomeSources) => {
-        const withoutUpdatedIncome = currentIncomeSources.filter(
-          (incomeSource) => incomeSource.id !== savedIncomeSource.id
-        );
-
-        return belongsToSelectedMonth
-          ? [savedIncomeSource, ...withoutUpdatedIncome]
-          : withoutUpdatedIncome;
-      });
+      setIncomeSources((currentIncomeSources) =>
+        currentIncomeSources.map((incomeSource) =>
+          incomeSource.id === savedIncomeSource.id
+            ? savedIncomeSource
+            : incomeSource
+        )
+      );
     } catch (error) {
       console.error("Unable to update income source:", error);
 
@@ -946,6 +1138,45 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     try {
       const userId = await getCurrentUserId();
 
+      const incomeToDelete = incomeSources.find(
+        (incomeSource) => incomeSource.id === id
+      );
+
+      if (!incomeToDelete) return;
+
+      // Recurring income:
+      // Delete all generated entries and then delete the template.
+      if (incomeToDelete.incomeTemplateId) {
+        const templateId = incomeToDelete.incomeTemplateId;
+
+        const { error: incomeEntriesError } = await supabase
+          .from("income_sources")
+          .delete()
+          .eq("user_id", userId)
+          .eq("income_template_id", templateId);
+
+        if (incomeEntriesError) throw incomeEntriesError;
+
+        const { error: templateError } = await supabase
+          .from("income_templates")
+          .delete()
+          .eq("id", templateId)
+          .eq("user_id", userId);
+
+        if (templateError) throw templateError;
+
+        setIncomeSources((currentIncomeSources) =>
+          currentIncomeSources.filter(
+            (incomeSource) =>
+              incomeSource.incomeTemplateId !== templateId
+          )
+        );
+
+        return;
+      }
+
+      // One-time income:
+      // Delete only this individual entry.
       const { error } = await supabase
         .from("income_sources")
         .delete()
@@ -1310,6 +1541,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         updateTransaction,
         addIncomeSource,
         updateIncomeSource,
+        addIncomeTemplate,
         addBill,
         addGoal,
         updateGoal,

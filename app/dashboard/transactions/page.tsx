@@ -7,6 +7,7 @@ import PageStatCard from "@/components/ui/PageStatCard";
 import PageSplitLayout from "@/components/ui/PageSplitLayout";
 import TransactionForm from "@/components/transactions/TransactionForm";
 import TransactionHistory from "@/components/transactions/TransactionHistory";
+import MonthSelector from "@/components/budget/MonthSelector";
 
 export default function TransactionsPage() {
   const {
@@ -57,13 +58,17 @@ export default function TransactionsPage() {
   }
 
   return (
-    <div className="space-y-8 px-8 py-8">
+    <div className="space-y-10 px-8 py-8">
       <PageHeader
         eyebrow="Transaction Page"
         title="Transactions"
         description="Add and review your spending. See where your money is going."
         color="orange"
       />
+
+      <div className="flex justify-center">
+        <MonthSelector />
+      </div>
 
       <div className="grid gap-6 md:grid-cols-3">
         <PageStatCard

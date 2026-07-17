@@ -8,6 +8,7 @@ import FinancialOverview from "@/components/dashboard/FinancialOverview";
 import RemainingBudgetCard from "@/components/dashboard/RemainingBudgetCard";
 import DashboardHero from "@/components/dashboard/DashboardHero";
 import { getDashboardSummary } from "@/lib/dashboard";
+import MonthSelector from "@/components/budget/MonthSelector";
 
 export default function Dashboard() {
   const { categories, transactions, incomeSources } = useBudget();
