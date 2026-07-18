@@ -10,6 +10,7 @@ type TransactionFormProps = {
   onAddTransaction: (transaction: Transaction) => void;
   onUpdateTransaction: (transaction: Transaction) => void;
   onCancelEdit: () => void;
+  isReadOnly?: boolean;
 };
 
 export default function TransactionForm({
@@ -18,6 +19,7 @@ export default function TransactionForm({
   onAddTransaction,
   onUpdateTransaction,
   onCancelEdit,
+  isReadOnly = false,
 }: TransactionFormProps) {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
@@ -45,6 +47,11 @@ export default function TransactionForm({
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+
+    if (isReadOnly) {
+      alert("This budget month is closed and cannot be changed.");
+      return;
+    }
 
     const trimmedName = name.trim();
     const amountNumber = Number(amount);
@@ -107,6 +114,7 @@ export default function TransactionForm({
       <input
         value={name}
         onChange={(event) => setName(event.target.value)}
+        disabled={isReadOnly}
         className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-orange-300"
         placeholder="Add Description"
       />
@@ -118,7 +126,8 @@ export default function TransactionForm({
       <input
         value={amount}
         onChange={(event) => setAmount(event.target.value)}
-        className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-orange-300"
+        disabled={isReadOnly}
+        className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-orange-300 disabled:cursor-not-allowed disabled:opacity-50"
         placeholder="Add numerical amount"
         type="number"
         min="0"
@@ -132,7 +141,8 @@ export default function TransactionForm({
       <select
         value={category}
         onChange={(event) => setCategory(event.target.value)}
-        className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-orange-300"
+        disabled={isReadOnly}
+        className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-orange-300 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <option value="">Select a Category</option>
 
@@ -146,7 +156,8 @@ export default function TransactionForm({
       <div className="mt-6 flex gap-3">
         <button
           type="submit"
-          className="flex-1 rounded-xl border border-zinc-700 bg-zinc-900 px-6 py-3 font-semibold text-orange-300 hover:bg-orange-300/30"
+          disabled={isReadOnly}
+          className="flex-1 rounded-xl border border-zinc-700 bg-zinc-900 px-6 py-3 font-semibold text-orange-300 hover:bg-orange-300/30 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {editingTransaction ? "Save Changes" : "Save Transaction"}
         </button>

@@ -4,12 +4,14 @@ type IncomeHistoryProps = {
   incomeSources: IncomeSource[];
   onEdit: (incomeId: string) => void;
   onDelete: (incomeId: string) => void;
+  isReadOnly?: boolean;
 };
 
 export default function IncomeHistory({
   incomeSources,
   onEdit,
   onDelete,
+  isReadOnly = false,
 }: IncomeHistoryProps) {
     
   return (
@@ -57,23 +59,25 @@ export default function IncomeHistory({
                     })}
                   </p>
 
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onEdit(incomeSource.id)}
-                      className="rounded-lg border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-300 transition hover:border-blue-500 hover:text-blue-400"
-                    >
-                      Edit
-                    </button>
+                  {!isReadOnly && (
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onEdit(incomeSource.id)}
+                        className="rounded-lg border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-300 transition hover:border-blue-500 hover:text-blue-400"
+                      >
+                        Edit
+                      </button>
 
-                    <button
-                      type="button"
-                      onClick={() => onDelete(incomeSource.id)}
-                      className="rounded-lg border border-red-900 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-950"
-                    >
-                      Delete
-                    </button>
-                  </div>
+                      <button
+                        type="button"
+                        onClick={() => onDelete(incomeSource.id)}
+                        className="rounded-lg border border-red-900 px-3 py-2 text-sm font-medium text-red-400 transition hover:bg-red-950"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -4,7 +4,13 @@ import { useState } from "react";
 import { useBudget } from "@/context/BudgetContext";
 
 export default function AddBillForm() {
-  const { categories, addBill } = useBudget();
+  const { 
+    categories, 
+    addBill, 
+    budgetMonthStatus,
+   } = useBudget();
+
+   const isMonthClosed = budgetMonthStatus === "closed";
 
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
@@ -13,6 +19,11 @@ export default function AddBillForm() {
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+
+    if (isMonthClosed) {
+      alert("This budget month is closed and cannot be changed.");
+      return;
+    }
 
     const trimmedName = name.trim();
     const amountNumber = Number(amount);
@@ -67,33 +78,37 @@ export default function AddBillForm() {
       <div className="mt-6 space-y-4">
         <input
           value={name}
+          disabled={isMonthClosed}
           onChange={(event) => setName(event.target.value)}
           placeholder="Bill name"
-          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-red-400"
+          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-red-400 disabled:cursor-not-allowed disabled:opacity-50"
         />
 
         <input
           value={amount}
+          disabled={isMonthClosed}
           onChange={(event) => setAmount(event.target.value)}
           placeholder="Monthly Amount"
           type="number"
-          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-red-400"
+          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-red-400 disabled:cursor-not-allowed disabled:opacity-50"
         />
 
         <input
           value={dueDay}
+          disabled={isMonthClosed}
           onChange={(event) => setDueDay(event.target.value)}
           placeholder="Due day, example: 15"
           type="number"
           min="1"
           max="31"
-          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-red-400"
+          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-red-400 disabled:cursor-not-allowed disabled:opacity-50"
         />
 
         <select
           value={category}
+          disabled={isMonthClosed}
           onChange={(event) => setCategory(event.target.value)}
-          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-red-400"
+          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-red-400 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <option value="">Select a category</option>
 
@@ -106,9 +121,10 @@ export default function AddBillForm() {
 
         <button
           type="submit"
-          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 font-semibold text-red-400 transition hover:bg-red-400/50"
+          disabled={isMonthClosed}
+          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 font-semibold text-red-400 transition hover:bg-red-400/50 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Add Bill
+          {isMonthClosed ? "Month Closed" : "Add Bill"}
         </button>
       </div>
     </form>

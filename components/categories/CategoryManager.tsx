@@ -4,12 +4,14 @@ type CategoryManagerProps = {
   categories: Category[];
   onEdit: (categoryId: string) => void;
   onDelete: (categoryId: string) => void;
+  isReadOnly?: boolean;
 };
 
 export default function CategoryManager({
   categories,
   onEdit,
   onDelete,
+  isReadOnly = false,
 }: CategoryManagerProps) {
   return (
     <section className="rounded-2xl border border-purple-800 bg-zinc-950/80 p-6 shadow-xl">
@@ -40,23 +42,25 @@ export default function CategoryManager({
                 </p>
               </div>
 
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => onEdit(category.id)}
-                  className="rounded-lg bg-blue-950/40 px-3 py-2 text-sm text-blue-400 transition hover:bg-blue-900/50 hover:text-blue-300"
-                >
-                  Edit
-                </button>
+              {!isReadOnly && (
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onEdit(category.id)}
+                    className="rounded-lg bg-blue-950/40 px-3 py-2 text-sm text-blue-400 transition hover:bg-blue-900/50 hover:text-blue-300"
+                  >
+                    Edit
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => onDelete(category.id)}
-                  className="rounded-lg bg-red-950/40 px-3 py-2 text-sm text-red-400 transition hover:bg-red-900/50 hover:text-red-300"
-                >
-                  Delete
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => onDelete(category.id)}
+                    className="rounded-lg bg-red-950/40 px-3 py-2 text-sm text-red-400 transition hover:bg-red-900/50 hover:text-red-300"
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
             </div>
           ))
         )}

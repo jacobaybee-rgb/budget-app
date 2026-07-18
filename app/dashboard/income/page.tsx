@@ -13,9 +13,12 @@ export default function IncomePage() {
   const {
     incomeSources,
     deleteIncomeSource,
+    budgetMonthStatus,
   } = useBudget();
 
   const [editingIncomeId, setEditingIncomeId] = useState<string | null>(null);
+
+  const isMonthClosed = budgetMonthStatus === "closed";
 
   const editingIncome =
     incomeSources.find(
@@ -33,6 +36,8 @@ export default function IncomePage() {
     sourceCount > 0 ? totalIncome / sourceCount : 0;
 
   function handleEditIncome(incomeId: string) {
+    if (isMonthClosed) return;
+
     setEditingIncomeId(incomeId);
 
     window.scrollTo({
@@ -42,6 +47,8 @@ export default function IncomePage() {
   }
 
   function handleDeleteIncome(incomeId: string) {
+    if (isMonthClosed) return;
+
     deleteIncomeSource(incomeId);
 
     if (editingIncomeId === incomeId) {
@@ -61,6 +68,19 @@ export default function IncomePage() {
       <div className="flex justify-center">
         <MonthSelector />
       </div>
+
+      {isMonthClosed && (
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-center">
+          <p className="font-semibold text-amber-300">
+            This month is closed
+          </p>
+
+          <p className="mt-1 text-sm text-zinc-400">
+            Income from this month is read-only and can no longer be
+            added, edited, or deleted.
+          </p>
+        </div>
+      )}
 
       <div className="grid gap-6 md:grid-cols-3">
         <PageStatCard
@@ -93,6 +113,7 @@ export default function IncomePage() {
           <IncomeForm
             editingIncome={editingIncome}
             onCancelEdit={() => setEditingIncomeId(null)}
+            isReadOnly={isMonthClosed}
           />
         }
         right={
@@ -100,6 +121,7 @@ export default function IncomePage() {
             incomeSources={incomeSources}
             onEdit={handleEditIncome}
             onDelete={handleDeleteIncome}
+            isReadOnly={isMonthClosed}
           />
         }
       />

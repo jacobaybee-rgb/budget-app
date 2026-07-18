@@ -8,6 +8,7 @@ import type { IncomeSource } from "@/types/income";
 type AddIncomeFormProps = {
   editingIncome: IncomeSource | null;
   onCancelEdit: () => void;
+  isReadOnly?: boolean;
 };
 
 type IncomeType = "one-time" | "monthly";
@@ -15,6 +16,7 @@ type IncomeType = "one-time" | "monthly";
 export default function IncomeForm({
   editingIncome,
   onCancelEdit,
+  isReadOnly = false,
 }: AddIncomeFormProps) {
   const { 
     selectedMonthStart,
@@ -58,6 +60,11 @@ export default function IncomeForm({
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+
+    if (isReadOnly) {
+      alert("This budget month is closed and cannot be changed.");
+      return;
+    }
 
     const trimmedSource = source.trim();
     const amountNumber = Number(amount);
@@ -154,8 +161,9 @@ export default function IncomeForm({
           <div className="grid gap-3 sm:grid-cols-2">
             <button
               type="button"
+              disabled={isReadOnly}
               onClick={() => setIncomeType("one-time")}
-              className={`flex items-center gap-3 rounded-xl border p-4 text-left transition ${
+              className={`flex items-center gap-3 rounded-xl border p-4 text-left transition disabled:cursor-not-allowed disabled:opacity-50 ${
                 incomeType === "one-time"
                   ? "border-emerald-400 bg-emerald-500/10"
                   : "border-zinc-700 bg-zinc-950 hover:border-zinc-500"
@@ -184,8 +192,9 @@ export default function IncomeForm({
 
             <button
               type="button"
+              disabled={isReadOnly}
               onClick={() => setIncomeType("monthly")}
-              className={`flex items-center gap-3 rounded-xl border p-4 text-left transition ${
+              className={`flex items-center gap-3 rounded-xl border p-4 text-left transition disabled:cursor-not-allowed disabled:opacity-50 ${
                 incomeType === "monthly"
                   ? "border-emerald-400 bg-emerald-500/10"
                   : "border-zinc-700 bg-zinc-950 hover:border-zinc-500"
@@ -225,10 +234,11 @@ export default function IncomeForm({
 
         <input
           id="income-source"
+          disabled={isReadOnly}
           value={source}
           onChange={(event) => setSource(event.target.value)}
           placeholder="How do you make your money?"
-          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 outline-none transition focus:border-green-400"
+          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 outline-none transition focus:border-green-400 disabled:cursor-not-allowed disabled:opacity-50"
         />
       </div>
 
@@ -242,13 +252,14 @@ export default function IncomeForm({
 
         <input
           id="income-amount"
+          disabled={isReadOnly}
           value={amount}
           onChange={(event) => setAmount(event.target.value)}
           type="number"
           min="0.01"
           step="0.01"
           placeholder="How much do you make?"
-          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 outline-none transition focus:border-green-400"
+          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 outline-none transition focus:border-green-400 disabled:cursor-not-allowed disabled:opacity-50"
         />
       </div>
 
@@ -263,10 +274,11 @@ export default function IncomeForm({
 
           <input
             id="income-date"
+            disabled={isReadOnly}
             value={date}
             onChange={(event) => setDate(event.target.value)}
             type="date"
-            className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 outline-none transition focus:border-green-400"
+            className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 outline-none transition focus:border-green-400 disabled:cursor-not-allowed disabled:opacity-50"
           />
         </div>
       )}
@@ -282,6 +294,7 @@ export default function IncomeForm({
 
           <input
             id="recurring-day"
+            disabled={isReadOnly}
             value={recurringDay}
             onChange={(event) =>
               setRecurringDay(event.target.value)
@@ -291,7 +304,7 @@ export default function IncomeForm({
             max="31"
             step="1"
             placeholder="Example: 1 or 15"
-            className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 outline-none transition focus:border-green-400"
+            className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 outline-none transition focus:border-green-400 disabled:cursor-not-allowed disabled:opacity-50"
           />
 
           <p className="text-xs text-zinc-500">
@@ -303,7 +316,8 @@ export default function IncomeForm({
 
       <button
         type="submit"
-        className="w-full rounded-xl bg-emerald-500/80 py-3 font-bold text-zinc-950 transition hover:bg-green-400"
+        disabled={isReadOnly}
+        className="w-full rounded-xl bg-emerald-500/80 py-3 font-bold text-zinc-950 transition hover:bg-green-400 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {editingIncome
           ? "Save Changes"
@@ -315,8 +329,9 @@ export default function IncomeForm({
       {editingIncome && (
         <button
           type="button"
+          disabled={isReadOnly}
           onClick={handleCancel}
-          className="w-full rounded-xl border border-zinc-700 py-3 font-semibold text-zinc-300 transition hover:bg-zinc-800"
+          className="w-full rounded-xl border border-zinc-700 py-3 font-semibold text-zinc-300 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Cancel
         </button>

@@ -4,12 +4,14 @@ type TransactionHistoryProps = {
   transactions: Transaction[];
   onEdit: (transactionId: string) => void;
   onDelete: (transactionId: string) => void;
+  isReadOnly?: boolean;
 };
 
 export default function TransactionHistory({
   transactions,
   onEdit,
   onDelete,
+  isReadOnly = false,
 }: TransactionHistoryProps) {
   return (
     <section className="rounded-2xl border border-orange-300 bg-zinc-950/80 p-6 shadow-xl">
@@ -28,35 +30,43 @@ export default function TransactionHistory({
             >
               <div>
                 <p className="font-bold">{transaction.name}</p>
-                <p className="text-zinc-400">{transaction.category}</p>
+
+                <p className="text-zinc-400">
+                  {transaction.category}
+                </p>
               </div>
 
               <div className="text-right">
                 <p className="font-bold text-red-400">
                   -$
-                  {Math.abs(transaction.amount).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
+                  {Math.abs(transaction.amount).toLocaleString(
+                    undefined,
+                    {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }
+                  )}
                 </p>
 
-                <div className="mt-2 flex justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => onEdit(transaction.id)}
-                    className="text-sm text-blue-400 hover:text-blue-300"
-                  >
-                    Edit
-                  </button>
+                {!isReadOnly && (
+                  <div className="mt-2 flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => onEdit(transaction.id)}
+                      className="text-sm text-blue-400 hover:text-blue-300"
+                    >
+                      Edit
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => onDelete(transaction.id)}
-                    className="text-sm text-red-400 hover:text-red-300"
-                  >
-                    Delete
-                  </button>
-                </div>
+                    <button
+                      type="button"
+                      onClick={() => onDelete(transaction.id)}
+                      className="text-sm text-red-400 hover:text-red-300"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))

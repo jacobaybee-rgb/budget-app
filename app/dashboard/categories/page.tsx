@@ -15,7 +15,10 @@ export default function CategoriesPage() {
     addCategory,
     updateCategory,
     deleteCategory,
+    budgetMonthStatus,
   } = useBudget();
+
+  const isMonthClosed = budgetMonthStatus === "closed";
 
   const [editingCategoryId, setEditingCategoryId] = useState<
     string | null
@@ -37,6 +40,8 @@ export default function CategoriesPage() {
     categoryCount > 0 ? totalBudget / categoryCount : 0;
 
   function handleEditCategory(categoryId: string) {
+    if (isMonthClosed) return;
+
     setEditingCategoryId(categoryId);
 
     window.scrollTo({
@@ -46,6 +51,8 @@ export default function CategoriesPage() {
   }
 
   function handleDeleteCategory(categoryId: string) {
+    if (isMonthClosed) return;
+
     deleteCategory(categoryId);
 
     if (editingCategoryId === categoryId) {
@@ -65,6 +72,19 @@ export default function CategoriesPage() {
       <div className="flex justify-center">
         <MonthSelector />
       </div>
+
+      {isMonthClosed && (
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-center">
+          <p className="font-semibold text-amber-300">
+            This month is closed
+          </p>
+
+          <p className="mt-1 text-sm text-zinc-400">
+            Category budgets for this month are read-only and can no longer
+            be added, edited, or deleted.
+          </p>
+        </div>
+      )}
 
       <div className="grid gap-6 md:grid-cols-3">
         <PageStatCard
@@ -100,6 +120,7 @@ export default function CategoriesPage() {
             onAddCategory={addCategory}
             onUpdateCategory={updateCategory}
             onCancelEdit={() => setEditingCategoryId(null)}
+            isReadOnly={isMonthClosed}
           />
         }
         right={
@@ -107,6 +128,7 @@ export default function CategoriesPage() {
             categories={categories}
             onEdit={handleEditCategory}
             onDelete={handleDeleteCategory}
+            isReadOnly={isMonthClosed}
           />
         }
       />

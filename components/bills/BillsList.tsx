@@ -1,10 +1,21 @@
 "use client";
 
 import { useBudget } from "@/context/BudgetContext";
-import { CalendarDays, CheckCircle2, Trash2 } from "lucide-react";
+import {
+  CalendarDays,
+  CheckCircle2,
+  Trash2,
+} from "lucide-react";
 
 export default function BillsList() {
-  const { bills, deleteBill, toggleBillPaid } = useBudget();
+  const {
+    bills,
+    deleteBill,
+    toggleBillPaid,
+    budgetMonthStatus,
+  } = useBudget();
+
+  const isMonthClosed = budgetMonthStatus === "closed";
 
   const sortedBills = bills
     .slice()
@@ -45,30 +56,48 @@ export default function BillsList() {
                 </p>
               </div>
 
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => toggleBillPaid(bill.id)}
-                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+              {!isMonthClosed && (
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => toggleBillPaid(bill.id)}
+                    className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                      bill.isPaid
+                        ? "bg-green-500/20 text-green-300"
+                        : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4" />
+                      {bill.isPaid ? "Paid" : "Mark Paid"}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => deleteBill(bill.id)}
+                    className="rounded-xl bg-red-500/10 px-4 py-2 text-red-300 transition hover:bg-red-500/20"
+                    aria-label={`Delete ${bill.name}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+
+              {isMonthClosed && (
+                <div
+                  className={`rounded-xl px-4 py-2 text-sm font-semibold ${
                     bill.isPaid
                       ? "bg-green-500/20 text-green-300"
-                      : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+                      : "bg-zinc-800 text-zinc-400"
                   }`}
                 >
                   <span className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4" />
-                    {bill.isPaid ? "Paid" : "Mark Paid"}
+                    {bill.isPaid ? "Paid" : "Unpaid"}
                   </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => deleteBill(bill.id)}
-                  className="rounded-xl bg-red-500/10 px-4 py-2 text-red-300 transition hover:bg-red-500/20"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
+                </div>
+              )}
             </div>
           ))
         )}

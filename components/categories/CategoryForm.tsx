@@ -12,6 +12,7 @@ type CategoryFormProps = {
     previousName: string
   ) => void;
   onCancelEdit: () => void;
+  isReadOnly?: boolean;
 };
 
 export default function CategoryForm({
@@ -20,6 +21,7 @@ export default function CategoryForm({
   onAddCategory,
   onUpdateCategory,
   onCancelEdit,
+  isReadOnly = false,
 }: CategoryFormProps) {
   const [name, setName] = useState("");
   const [budget, setBudget] = useState("");
@@ -43,6 +45,11 @@ export default function CategoryForm({
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+
+    if (isReadOnly) {
+      alert("This budget month is closed and cannot be changed.");
+      return;
+    }
 
     const trimmedName = name.trim();
     const budgetNumber = Number(budget);
@@ -110,8 +117,9 @@ export default function CategoryForm({
 
       <input
         value={name}
+        disabled={isReadOnly}
         onChange={(event) => setName(event.target.value)}
-        className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-purple-500/50"
+        className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-purple-500/50 disabled:cursor-not-allowed disabled:opacity-50"
         placeholder="Name of Category"
       />
 
@@ -121,8 +129,9 @@ export default function CategoryForm({
 
       <input
         value={budget}
+        disabled={isReadOnly}
         onChange={(event) => setBudget(event.target.value)}
-        className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-purple-500/50"
+        className="mt-2 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-purple-500/50 disabled:cursor-not-allowed disabled:opacity-50"
         placeholder="Amount you want to budget"
         type="number"
         min="0"
@@ -132,16 +141,21 @@ export default function CategoryForm({
       <div className="mt-6 flex gap-3">
         <button
           type="submit"
-          className="flex-1 rounded-xl bg-purple-400/70 px-6 py-3 font-semibold text-zinc-950 hover:bg-purple-500"
+          disabled={isReadOnly}
+          className="flex-1 rounded-xl bg-purple-400/70 px-6 py-3 font-semibold text-zinc-950 hover:bg-purple-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {editingCategory ? "Save Changes" : "Save Category"}
+          {isReadOnly
+            ? "Month Closed"
+            : editingCategory
+              ? "Save Changes"
+              : "Add Category"}
         </button>
 
-        {editingCategory && (
+        {editingCategory && !isReadOnly && (
           <button
             type="button"
             onClick={handleCancel}
-            className="rounded-xl border border-zinc-700 bg-zinc-900 px-6 py-3 font-semibold text-zinc-300 hover:bg-zinc-800"
+            className="rounded-xl border border-zinc-700 bg-zinc-900 px-6 py-3 font-semibold text-zinc-300 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Cancel
           </button>

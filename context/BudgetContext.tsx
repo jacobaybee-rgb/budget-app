@@ -233,6 +233,78 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
 
       const { start, end } = getMonthRange(selectedMonthStart);
 
+      let budgetMonth: BudgetMonthRecord | null = null;
+
+      const {
+        data: existingMonthData,
+        error: existingMonthError,
+      } = await supabase
+        .from("budget_months")
+        .select(
+          "id, month_start, status, closed_at, closing_balance"
+        )
+        .eq("user_id", user.id)
+        .eq("month_start", selectedMonthStart)
+        .maybeSingle();
+
+      if (existingMonthError) {
+        console.error(
+          "Unable to search for budget month:",
+          existingMonthError
+        );
+      }
+
+      if (existingMonthData) {
+        budgetMonth = existingMonthData as BudgetMonthRecord;
+      } else {
+        const {
+          data: createdMonthData,
+          error: createdMonthError,
+        } = await supabase
+          .from("budget_months")
+          .insert({
+            user_id: user.id,
+            month_start: selectedMonthStart,
+            status: "open",
+          })
+          .select(
+            "id, month_start, status, closed_at, closing_balance"
+          )
+          .single();
+
+        if (createdMonthError) {
+          console.error(
+            "Unable to create budget month:",
+            createdMonthError
+          );
+
+          if (!isCancelled) {
+            setCategories([]);
+            setTransactions([]);
+            setIncomeSources([]);
+            setBills([]);
+            setGoals([]);
+            setBudgetMonthId(null);
+            setIsBudgetLoading(false);
+          }
+
+          return;
+        }
+
+        budgetMonth = createdMonthData as BudgetMonthRecord;
+      }
+
+      if (!budgetMonth) {
+        console.error("The selected budget month could not be loaded.");
+
+        if (!isCancelled) {
+          setBudgetMonthId(null);
+          setIsBudgetLoading(false);
+        }
+
+        return;
+      }
+
       const [
         categoriesResult,
         billsResult,
@@ -330,7 +402,10 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         incomeTemplatesResult.data ?? []
       ) as IncomeTemplateRecord[];
 
-      if (activeIncomeTemplates.length > 0) {
+      if (
+        budgetMonth.status === "open" &&
+        activeIncomeTemplates.length > 0
+      ) {
         const recurringIncomeRows = activeIncomeTemplates.map(
           (template) => ({
             id: crypto.randomUUID(),
@@ -387,78 +462,6 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
 
       const baseBills = (billsResult.data ?? []) as BillRecord[];
 
-      let budgetMonth: BudgetMonthRecord | null = null;
-
-      const {
-        data: existingMonthData,
-        error: existingMonthError,
-      } = await supabase
-        .from("budget_months")
-        .select(
-          "id, month_start, status, closed_at, closing_balance"
-        )
-        .eq("user_id", user.id)
-        .eq("month_start", selectedMonthStart)
-        .maybeSingle();
-
-      if (existingMonthError) {
-        console.error(
-          "Unable to search for budget month:",
-          existingMonthError
-        );
-      }
-
-      if (existingMonthData) {
-        budgetMonth = existingMonthData as BudgetMonthRecord;
-      } else {
-        const {
-          data: createdMonthData,
-          error: createdMonthError,
-        } = await supabase
-          .from("budget_months")
-          .insert({
-            user_id: user.id,
-            month_start: selectedMonthStart,
-            status: "open",
-          })
-          .select(
-            "id, month_start, status, closed_at, closing_balance"
-          )
-          .single();
-
-        if (createdMonthError) {
-          console.error(
-            "Unable to create budget month:",
-            createdMonthError
-          );
-
-          if (!isCancelled) {
-            setCategories([]);
-            setTransactions([]);
-            setIncomeSources([]);
-            setBills([]);
-            setGoals([]);
-            setBudgetMonthId(null);
-            setIsBudgetLoading(false);
-          }
-
-          return;
-        }
-
-        budgetMonth = createdMonthData as BudgetMonthRecord;
-      }
-
-      if (!budgetMonth) {
-        console.error("The selected budget month could not be loaded.");
-
-        if (!isCancelled) {
-          setBudgetMonthId(null);
-          setIsBudgetLoading(false);
-        }
-
-        return;
-      }
-
       const [carryoverResult, savingsResult] = await Promise.all([
         supabase
           .from("month_end_allocations")
@@ -498,7 +501,10 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         0
       );
 
-      if (baseCategories.length > 0) {
+      if (
+        budgetMonth.status === "open" &&
+        baseCategories.length > 0
+      ) {
         const { error: categorySeedError } = await supabase
           .from("category_month_budgets")
           .upsert(
@@ -522,7 +528,10 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      if (baseBills.length > 0) {
+      if (
+        budgetMonth.status === "open" &&
+        baseBills.length > 0
+      ) {
         const { error: billSeedError } = await supabase
           .from("bill_payments")
           .upsert(
@@ -692,6 +701,14 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     return budgetMonthId;
   }
 
+  function requireOpenBudgetMonth() {
+    if (budgetMonthStatus === "closed") {
+      throw new Error(
+        "This budget month is closed and can no longer be changed."
+      );
+    }
+  }
+
   function goToPreviousMonth() {
     setSelectedMonthStart((currentMonth) =>
       shiftMonth(currentMonth, -1)
@@ -710,6 +727,8 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
 
   async function addCategory(category: Category) {
     try {
+      requireOpenBudgetMonth();
+
       const userId = await getCurrentUserId();
       const monthId = requireBudgetMonthId();
 
@@ -769,6 +788,8 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     previousName: string
   ) {
     try {
+      requireOpenBudgetMonth();
+
       const userId = await getCurrentUserId();
       const monthId = requireBudgetMonthId();
       const { start, end } = getMonthRange(selectedMonthStart);
@@ -870,6 +891,8 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
 
   async function addTransaction(transaction: Transaction) {
     try {
+      requireOpenBudgetMonth();
+
       const userId = await getCurrentUserId();
 
       const transactionDate = moveDateToMonth(
@@ -911,6 +934,8 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     updatedTransaction: Transaction
   ) {
     try {
+      requireOpenBudgetMonth();
+
       const userId = await getCurrentUserId();
 
       const transactionDate = moveDateToMonth(
@@ -956,6 +981,8 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
 
   async function addIncomeSource(incomeSource: IncomeSource) {
     try {
+      requireOpenBudgetMonth();
+
       const userId = await getCurrentUserId();
 
       const incomeDate = moveDateToMonth(
@@ -996,6 +1023,8 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     incomeTemplate: IncomeTemplate
   ) {
     try {
+      requireOpenBudgetMonth();
+
       const userId = await getCurrentUserId();
 
       const { data: templateData, error: templateError } =
@@ -1079,6 +1108,8 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     updatedIncomeSource: IncomeSource
   ) {
     try {
+      requireOpenBudgetMonth();
+
       const userId = await getCurrentUserId();
 
       const incomeDate = moveDateToMonth(
@@ -1123,6 +1154,8 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
 
   async function addBill(bill: Bill) {
     try {
+      requireOpenBudgetMonth();
+
       const userId = await getCurrentUserId();
       const monthId = requireBudgetMonthId();
 
@@ -1195,6 +1228,8 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
 
   async function deleteCategory(id: string) {
     try {
+      requireOpenBudgetMonth();
+
       const userId = await getCurrentUserId();
 
       const { error } = await supabase
@@ -1221,6 +1256,8 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
 
   async function deleteTransaction(id: string) {
     try {
+      requireOpenBudgetMonth();
+
       const userId = await getCurrentUserId();
 
       const { error } = await supabase
@@ -1261,6 +1298,8 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
 
   async function deleteIncomeSource(id: string) {
     try {
+      requireOpenBudgetMonth();
+
       const userId = await getCurrentUserId();
 
       const incomeToDelete = incomeSources.find(
@@ -1328,6 +1367,8 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
 
   async function deleteBill(id: string) {
     try {
+      requireOpenBudgetMonth();
+
       const userId = await getCurrentUserId();
 
       const paymentTransactionIds = bills
@@ -1381,6 +1422,8 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     if (!bill) return;
 
     try {
+      requireOpenBudgetMonth();
+
       const userId = await getCurrentUserId();
       const monthId = requireBudgetMonthId();
 
