@@ -4,6 +4,7 @@ import type { Transaction } from "@/types/transaction";
 type DashboardSummaryInput = {
   incomeSources: IncomeSource[];
   transactions: Transaction[];
+  carryoverReceived?: number;
 };
 
 export type FinancialStatus = {
@@ -17,6 +18,8 @@ type DashboardSummary = {
   income: number;
   spent: number;
   remaining: number;
+  availableFunds: number;
+  carryover: number;
   spentPercent: number;
   budgetMessage: string;
   financialStatus: FinancialStatus;
@@ -25,11 +28,16 @@ type DashboardSummary = {
 export function getDashboardSummary({
   incomeSources,
   transactions,
+  carryoverReceived = 0,
 }: DashboardSummaryInput): DashboardSummary {
   const income = incomeSources.reduce(
     (total, incomeSource) => total + incomeSource.amount,
     0
   );
+
+  const carryover = carryoverReceived ?? 0;
+
+  const availableFunds = income + carryover;
 
   const spent = transactions.reduce(
     (total, transaction) =>
@@ -39,11 +47,14 @@ export function getDashboardSummary({
     0
   );
 
-  const remaining = income - spent;
+  const remaining = availableFunds - spent;
 
   const spentPercent =
-    income > 0
-      ? Math.min(Math.round((spent / income) * 100), 100)
+    availableFunds > 0
+      ? Math.min(
+          Math.round((spent / availableFunds) * 100),
+          100
+        )
       : 0;
 
   const budgetMessage =
@@ -104,6 +115,8 @@ export function getDashboardSummary({
 
   return {
     income,
+    carryover,
+    availableFunds,
     spent,
     remaining,
     spentPercent,

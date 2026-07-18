@@ -26,6 +26,11 @@ type BudgetContextType = {
 
   selectedMonthStart: string;
   budgetMonthId: string | null;
+  budgetMonthStatus: BudgetMonthStatus;
+  closedAt: string | null;
+  closingBalance: number | null;
+  carryoverReceived: number;
+  savingsBalance: number;
   isBudgetLoading: boolean;
   goToPreviousMonth: () => void;
   goToNextMonth: () => void;
@@ -56,11 +61,30 @@ type BudgetContextType = {
   deleteGoal: (id: string) => Promise<void>;
 
   toggleBillPaid: (id: string) => Promise<void>;
+
+  closeBudgetMonth: (
+    allocations: MonthEndAllocationInput[]
+  ) => Promise<void>;
+};
+
+type BudgetMonthStatus = "open" | "closed";
+
+export type MonthEndAllocationInput = {
+  destinationType:
+    | "next_month"
+    | "savings"
+    | "goal"
+    | "unallocated";
+  amount: number;
+  goalId?: string;
 };
 
 type BudgetMonthRecord = {
   id: string;
   month_start: string;
+  status: BudgetMonthStatus;
+  closed_at: string | null;
+  closing_balance: number | string | null;
 };
 
 type CategoryRecord = {
@@ -166,6 +190,17 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
   const [budgetMonthId, setBudgetMonthId] = useState<string | null>(
     null
   );
+  const [budgetMonthStatus, setBudgetMonthStatus] =
+    useState<BudgetMonthStatus>("open");
+
+  const [closedAt, setClosedAt] = useState<string | null>(null);
+
+  const [closingBalance, setClosingBalance] =
+    useState<number | null>(null);
+
+  const [carryoverReceived, setCarryoverReceived] = useState(0);
+
+  const [savingsBalance, setSavingsBalance] = useState(0);
   const [isBudgetLoading, setIsBudgetLoading] = useState(true);
 
 
@@ -352,31 +387,71 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
 
       const baseBills = (billsResult.data ?? []) as BillRecord[];
 
-      const { data: monthData, error: monthError } = await supabase
+      let budgetMonth: BudgetMonthRecord | null = null;
+
+      const {
+        data: existingMonthData,
+        error: existingMonthError,
+      } = await supabase
         .from("budget_months")
-        .upsert(
-          {
+        .select(
+          "id, month_start, status, closed_at, closing_balance"
+        )
+        .eq("user_id", user.id)
+        .eq("month_start", selectedMonthStart)
+        .maybeSingle();
+
+      if (existingMonthError) {
+        console.error(
+          "Unable to search for budget month:",
+          existingMonthError
+        );
+      }
+
+      if (existingMonthData) {
+        budgetMonth = existingMonthData as BudgetMonthRecord;
+      } else {
+        const {
+          data: createdMonthData,
+          error: createdMonthError,
+        } = await supabase
+          .from("budget_months")
+          .insert({
             user_id: user.id,
             month_start: selectedMonthStart,
             status: "open",
-          },
-          {
-            onConflict: "user_id,month_start",
-            ignoreDuplicates: false,
-          }
-        )
-        .select("id, month_start")
-        .single();
+          })
+          .select(
+            "id, month_start, status, closed_at, closing_balance"
+          )
+          .single();
 
-      if (monthError) {
-        console.error("Unable to load budget month:", monthError);
+        if (createdMonthError) {
+          console.error(
+            "Unable to create budget month:",
+            createdMonthError
+          );
+
+          if (!isCancelled) {
+            setCategories([]);
+            setTransactions([]);
+            setIncomeSources([]);
+            setBills([]);
+            setGoals([]);
+            setBudgetMonthId(null);
+            setIsBudgetLoading(false);
+          }
+
+          return;
+        }
+
+        budgetMonth = createdMonthData as BudgetMonthRecord;
+      }
+
+      if (!budgetMonth) {
+        console.error("The selected budget month could not be loaded.");
 
         if (!isCancelled) {
-          setCategories([]);
-          setTransactions([]);
-          setIncomeSources([]);
-          setBills([]);
-          setGoals([]);
           setBudgetMonthId(null);
           setIsBudgetLoading(false);
         }
@@ -384,7 +459,44 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const budgetMonth = monthData as BudgetMonthRecord;
+      const [carryoverResult, savingsResult] = await Promise.all([
+        supabase
+          .from("month_end_allocations")
+          .select("amount")
+          .eq("user_id", user.id)
+          .eq("destination_type", "next_month")
+          .eq("destination_budget_month_id", budgetMonth.id),
+
+        supabase
+          .from("month_end_allocations")
+          .select("amount")
+          .eq("user_id", user.id)
+          .eq("destination_type", "savings"),
+      ]);
+
+      if (carryoverResult.error) {
+        console.error(
+          "Unable to load received carryover:",
+          carryoverResult.error
+        );
+      }
+
+      if (savingsResult.error) {
+        console.error(
+          "Unable to load savings balance:",
+          savingsResult.error
+        );
+      }
+
+      const loadedCarryover = (carryoverResult.data ?? []).reduce(
+        (total, allocation) => total + Number(allocation.amount),
+        0
+      );
+
+      const loadedSavingsBalance = (savingsResult.data ?? []).reduce(
+        (total, allocation) => total + Number(allocation.amount),
+        0
+      );
 
       if (baseCategories.length > 0) {
         const { error: categorySeedError } = await supabase
@@ -519,6 +631,19 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
 
       if (!isCancelled) {
         setBudgetMonthId(budgetMonth.id);
+
+        setBudgetMonthStatus(budgetMonth.status);
+        setClosedAt(budgetMonth.closed_at);
+
+        setClosingBalance(
+          budgetMonth.closing_balance === null
+            ? null
+            : Number(budgetMonth.closing_balance)
+        );
+
+        setCarryoverReceived(loadedCarryover);
+        setSavingsBalance(loadedSavingsBalance);
+
         setCategories(loadedCategories);
         setBills(loadedBills);
         setTransactions(
@@ -1392,6 +1517,270 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  async function closeBudgetMonth(
+    allocations: MonthEndAllocationInput[]
+  ) {
+    try {
+      const userId = await getCurrentUserId();
+      const sourceMonthId = requireBudgetMonthId();
+
+      if (budgetMonthStatus === "closed") {
+        throw new Error("This budget month is already closed.");
+      }
+
+      const income = incomeSources.reduce(
+        (total, incomeSource) => total + incomeSource.amount,
+        0
+      );
+
+      const spent = transactions.reduce(
+        (total, transaction) =>
+          transaction.amount < 0
+            ? total + Math.abs(transaction.amount)
+            : total,
+        0
+      );
+
+      const remainingBalance =
+        income + carryoverReceived - spent;
+
+      if (remainingBalance < 0) {
+        throw new Error(
+          "This month cannot be closed with allocations because it has a negative balance."
+        );
+      }
+
+      const cleanedAllocations = allocations
+        .map((allocation) => ({
+          ...allocation,
+          amount: Number(allocation.amount),
+        }))
+        .filter((allocation) => allocation.amount > 0);
+
+      const allocatedTotal = cleanedAllocations.reduce(
+        (total, allocation) => total + allocation.amount,
+        0
+      );
+
+      if (allocatedTotal > remainingBalance + 0.005) {
+        throw new Error(
+          "Your allocations cannot exceed the money remaining this month."
+        );
+      }
+
+      const goalAllocations = cleanedAllocations.filter(
+        (allocation) =>
+          allocation.destinationType === "goal"
+      );
+
+      for (const allocation of goalAllocations) {
+        if (!allocation.goalId) {
+          throw new Error(
+            "Each goal allocation must have a selected goal."
+          );
+        }
+
+        const selectedGoal = goals.find(
+          (goal) => goal.id === allocation.goalId
+        );
+
+        if (!selectedGoal) {
+          throw new Error(
+            "One of the selected savings goals could not be found."
+          );
+        }
+      }
+
+      const nextMonthStart = shiftMonth(
+        selectedMonthStart,
+        1
+      );
+
+      let destinationMonthId: string | null = null;
+
+      const hasNextMonthAllocation = cleanedAllocations.some(
+        (allocation) =>
+          allocation.destinationType === "next_month"
+      );
+
+      if (hasNextMonthAllocation) {
+        const {
+          data: existingNextMonth,
+          error: existingNextMonthError,
+        } = await supabase
+          .from("budget_months")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("month_start", nextMonthStart)
+          .maybeSingle();
+
+        if (existingNextMonthError) {
+          throw existingNextMonthError;
+        }
+
+        if (existingNextMonth) {
+          destinationMonthId = existingNextMonth.id;
+        } else {
+          const {
+            data: createdNextMonth,
+            error: createdNextMonthError,
+          } = await supabase
+            .from("budget_months")
+            .insert({
+              user_id: userId,
+              month_start: nextMonthStart,
+              status: "open",
+            })
+            .select("id")
+            .single();
+
+          if (createdNextMonthError) {
+            throw createdNextMonthError;
+          }
+
+          destinationMonthId = createdNextMonth.id;
+        }
+      }
+
+      if (cleanedAllocations.length > 0) {
+        const allocationRows = cleanedAllocations.map(
+          (allocation) => ({
+            id: crypto.randomUUID(),
+            user_id: userId,
+            source_budget_month_id: sourceMonthId,
+            destination_type: allocation.destinationType,
+            destination_budget_month_id:
+              allocation.destinationType === "next_month"
+                ? destinationMonthId
+                : null,
+            goal_id:
+              allocation.destinationType === "goal"
+                ? allocation.goalId ?? null
+                : null,
+            amount: allocation.amount,
+          })
+        );
+
+        const { error: allocationError } = await supabase
+          .from("month_end_allocations")
+          .insert(allocationRows);
+
+        if (allocationError) {
+          throw allocationError;
+        }
+      }
+
+      const goalAmounts = new Map<string, number>();
+
+      for (const allocation of goalAllocations) {
+        const goalId = allocation.goalId as string;
+
+        goalAmounts.set(
+          goalId,
+          (goalAmounts.get(goalId) ?? 0) + allocation.amount
+        );
+      }
+
+      const updatedGoals: Goal[] = [];
+
+      for (const [goalId, contributionAmount] of goalAmounts) {
+        const selectedGoal = goals.find(
+          (goal) => goal.id === goalId
+        );
+
+        if (!selectedGoal) continue;
+
+        const newCurrentAmount =
+          selectedGoal.currentAmount + contributionAmount;
+
+        const { data, error } = await supabase
+          .from("goals")
+          .update({
+            current_amount: newCurrentAmount,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", goalId)
+          .eq("user_id", userId)
+          .select(
+            "id, name, target_amount, current_amount, target_date"
+          )
+          .single();
+
+        if (error) {
+          throw error;
+        }
+
+        updatedGoals.push({
+          id: data.id,
+          name: data.name,
+          targetAmount: Number(data.target_amount),
+          currentAmount: Number(data.current_amount),
+          targetDate: data.target_date,
+        });
+      }
+
+      const closedTimestamp = new Date().toISOString();
+
+      const { error: closeMonthError } = await supabase
+        .from("budget_months")
+        .update({
+          status: "closed",
+          closed_at: closedTimestamp,
+          closing_balance: remainingBalance,
+          updated_at: closedTimestamp,
+        })
+        .eq("id", sourceMonthId)
+        .eq("user_id", userId);
+
+      if (closeMonthError) {
+        throw closeMonthError;
+      }
+
+      setBudgetMonthStatus("closed");
+      setClosedAt(closedTimestamp);
+      setClosingBalance(remainingBalance);
+
+      if (updatedGoals.length > 0) {
+        setGoals((currentGoals) =>
+          currentGoals.map((goal) => {
+            const updatedGoal = updatedGoals.find(
+              (candidate) => candidate.id === goal.id
+            );
+
+            return updatedGoal ?? goal;
+          })
+        );
+      }
+
+      const savingsAdded = cleanedAllocations
+        .filter(
+          (allocation) =>
+            allocation.destinationType === "savings"
+        )
+        .reduce(
+          (total, allocation) => total + allocation.amount,
+          0
+        );
+
+      if (savingsAdded > 0) {
+        setSavingsBalance(
+          (currentBalance) =>
+            currentBalance + savingsAdded
+        );
+      }
+    } catch (error) {
+      console.error("Unable to close budget month:", error);
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to close the selected budget month."
+      );
+
+      throw error;
+    }
+  }
+
   async function addGoal(goal: Goal) {
     try {
       const userId = await getCurrentUserId();
@@ -1530,6 +1919,11 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
 
         selectedMonthStart,
         budgetMonthId,
+        budgetMonthStatus,
+        closedAt,
+        closingBalance,
+        carryoverReceived,
+        savingsBalance,
         isBudgetLoading,
         goToPreviousMonth,
         goToNextMonth,
@@ -1553,6 +1947,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         deleteGoal,
 
         toggleBillPaid,
+        closeBudgetMonth,
       }}
     >
       {children}

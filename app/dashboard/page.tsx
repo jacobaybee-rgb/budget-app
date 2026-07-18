@@ -9,12 +9,20 @@ import RemainingBudgetCard from "@/components/dashboard/RemainingBudgetCard";
 import DashboardHero from "@/components/dashboard/DashboardHero";
 import { getDashboardSummary } from "@/lib/dashboard";
 import MonthSelector from "@/components/budget/MonthSelector";
+import MonthEndAllocationCard from "@/components/budget/MonthEndAllocationCard";
 
 export default function Dashboard() {
-  const { categories, transactions, incomeSources } = useBudget();
+  const { 
+    categories,
+    transactions, 
+    incomeSources,
+    carryoverReceived,
+  } = useBudget();
 
   const {
     income,
+    carryover,
+    availableFunds,
     spent,
     remaining,
     spentPercent,
@@ -23,6 +31,7 @@ export default function Dashboard() {
   } = getDashboardSummary({
     incomeSources,
     transactions,
+    carryoverReceived,
   });
 
   return (
@@ -33,10 +42,12 @@ export default function Dashboard() {
       />  
 
       {/* Remaining This Month Card */}
-      <div className="relative z-10 -mt-32 px-4 sm:px-6 md:-mt-70 md:px-8">
+      <div className="relative z-10 -mt-32 px-4 sm:px-6 md:-mt-45 md:px-8">
         <div className="grid gap-6 xl:grid-cols-[1.3fr_1fr]">
           <RemainingBudgetCard
             income={income}
+            carryover={carryover}
+            availableFunds={availableFunds}
             spent={spent}
             remaining={remaining}
             spentPercent={spentPercent}
@@ -56,6 +67,8 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <div className="px-8 pt-6 space-y-8">
+        <MonthEndAllocationCard remaining={remaining} />
+
         <div className="grid gap-8 lg:grid-cols-2">
           <CategoryList
             categories={categories}

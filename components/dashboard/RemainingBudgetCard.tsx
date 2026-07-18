@@ -1,5 +1,7 @@
 type RemainingBudgetCardProps = {
   income: number;
+  carryover: number;
+  availableFunds: number;
   spent: number;
   remaining: number;
   spentPercent: number;
@@ -8,6 +10,8 @@ type RemainingBudgetCardProps = {
 
 export default function RemainingBudgetCard({
   income,
+  carryover,
+  availableFunds,
   spent,
   remaining,
   spentPercent,
@@ -46,7 +50,9 @@ export default function RemainingBudgetCard({
             {spentPercent}%
           </p>
 
-          <p className="text-xs text-zinc-300">of income spent</p>
+          <p className="text-xs text-zinc-300">
+            of available funds spent
+          </p>
         </div>
       </div>
 
@@ -57,7 +63,13 @@ export default function RemainingBudgetCard({
         />
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-5 border-t border-zinc-800 pt-6 text-center sm:grid-cols-3 sm:gap-6">
+      <div
+        className={`mt-8 grid gap-5 border-t border-zinc-800 pt-6 text-center ${
+          carryover > 0
+            ? "grid-cols-2 lg:grid-cols-4"
+            : "grid-cols-1 sm:grid-cols-3"
+        }`}
+      >
         <div>
           <p className="text-2xl font-bold text-green-400">
             $
@@ -70,6 +82,32 @@ export default function RemainingBudgetCard({
           <p className="text-xs text-zinc-400">Income</p>
         </div>
 
+        {carryover > 0 && (
+          <div>
+            <p className="text-2xl font-bold text-cyan-400">
+              $
+              {carryover.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </p>
+
+            <p className="text-xs text-zinc-400">Carryover</p>
+          </div>
+        )}
+
+        <div>
+          <p className="text-2xl font-bold text-purple-400">
+            $
+            {availableFunds.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </p>
+
+          <p className="text-xs text-zinc-400">Available Funds</p>
+        </div>
+
         <div>
           <p className="text-2xl font-bold text-red-400">
             $
@@ -80,18 +118,6 @@ export default function RemainingBudgetCard({
           </p>
 
           <p className="text-xs text-zinc-400">Spent</p>
-        </div>
-
-        <div>
-          <p className="text-2xl font-bold text-blue-400">
-            $
-            {remaining.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
-          </p>
-
-          <p className="text-xs text-zinc-400">Remaining</p>
         </div>
       </div>
     </section>
