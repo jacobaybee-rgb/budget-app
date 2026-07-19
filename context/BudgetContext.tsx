@@ -27,6 +27,7 @@ type BudgetContextType = {
   selectedMonthStart: string;
   budgetMonthId: string | null;
   budgetMonthStatus: BudgetMonthStatus;
+  budgetMonths: BudgetMonthSummary[];
   closedAt: string | null;
   closingBalance: number | null;
   carryoverReceived: number;
@@ -35,6 +36,7 @@ type BudgetContextType = {
   goToPreviousMonth: () => void;
   goToNextMonth: () => void;
   goToCurrentMonth: () => void;
+  goToMonth: (monthStart: string) => void;
 
   addCategory: (category: Category) => Promise<void>;
   updateCategory: (
@@ -68,6 +70,11 @@ type BudgetContextType = {
 };
 
 type BudgetMonthStatus = "open" | "closed";
+
+export type BudgetMonthSummary = {
+  monthStart: string;
+  status: BudgetMonthStatus;
+};
 
 export type MonthEndAllocationInput = {
   destinationType:
@@ -193,6 +200,10 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
   const [budgetMonthStatus, setBudgetMonthStatus] =
     useState<BudgetMonthStatus>("open");
 
+  const [budgetMonths, setBudgetMonths] = useState<
+    BudgetMonthSummary[]
+  >([]);
+
   const [closedAt, setClosedAt] = useState<string | null>(null);
 
   const [closingBalance, setClosingBalance] =
@@ -229,6 +240,22 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         }
 
         return;
+      }
+
+      const {
+        data: budgetMonthsData,
+        error: budgetMonthsError,
+      } = await supabase
+        .from("budget_months")
+        .select("month_start, status")
+        .eq("user_id", user.id)
+        .order("month_start", { ascending: true });
+
+      if (budgetMonthsError) {
+        console.error(
+          "Unable to load budget month statuses:",
+          budgetMonthsError
+        );
       }
 
       const { start, end } = getMonthRange(selectedMonthStart);
@@ -292,6 +319,25 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         }
 
         budgetMonth = createdMonthData as BudgetMonthRecord;
+
+        setBudgetMonths((currentMonths) => {
+          const monthAlreadyExists = currentMonths.some(
+            (month) =>
+              month.monthStart === createdMonthData.month_start
+          );
+
+          if (monthAlreadyExists) {
+            return currentMonths;
+          }
+
+          return [
+            ...currentMonths,
+            {
+              monthStart: createdMonthData.month_start,
+              status: createdMonthData.status as BudgetMonthStatus,
+            },
+          ];
+        });
       }
 
       if (!budgetMonth) {
@@ -639,6 +685,12 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
       }));
 
       if (!isCancelled) {
+        setBudgetMonths(
+          (budgetMonthsData ?? []).map((month) => ({
+            monthStart: month.month_start,
+            status: month.status as BudgetMonthStatus,
+          }))
+        );
         setBudgetMonthId(budgetMonth.id);
 
         setBudgetMonthStatus(budgetMonth.status);
@@ -723,6 +775,10 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
 
   function goToCurrentMonth() {
     setSelectedMonthStart(getCurrentMonthStart());
+  }
+
+  function goToMonth(monthStart: string) {
+    setSelectedMonthStart(monthStart);
   }
 
   async function addCategory(category: Category) {
@@ -1780,6 +1836,13 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
       }
 
       setBudgetMonthStatus("closed");
+      setBudgetMonths((currentMonths) =>
+        currentMonths.map((month) =>
+          month.monthStart === selectedMonthStart
+            ? { ...month, status: "closed" }
+            : month
+        )
+      );
       setClosedAt(closedTimestamp);
       setClosingBalance(remainingBalance);
 
@@ -1963,6 +2026,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         selectedMonthStart,
         budgetMonthId,
         budgetMonthStatus,
+        budgetMonths,
         closedAt,
         closingBalance,
         carryoverReceived,
@@ -1971,6 +2035,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         goToPreviousMonth,
         goToNextMonth,
         goToCurrentMonth,
+        goToMonth,
 
         addCategory,
         updateCategory,

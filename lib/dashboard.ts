@@ -5,6 +5,7 @@ type DashboardSummaryInput = {
   incomeSources: IncomeSource[];
   transactions: Transaction[];
   carryoverReceived?: number;
+  budgetMonthStatus?: string;
 };
 
 export type FinancialStatus = {
@@ -29,6 +30,7 @@ export function getDashboardSummary({
   incomeSources,
   transactions,
   carryoverReceived = 0,
+  budgetMonthStatus,
 }: DashboardSummaryInput): DashboardSummary {
   const income = incomeSources.reduce(
     (total, incomeSource) => total + incomeSource.amount,
@@ -71,7 +73,15 @@ export function getDashboardSummary({
       : "You've spent more than your income. Time to re-evaluate spending.";
 
   const financialStatus: FinancialStatus =
-    income === 0
+    budgetMonthStatus === "closed"
+      ? {
+          title: "Month Closed",
+          message:
+            "Nice work! This budget has been finalized and is now read-only.",
+          textColor: "text-yellow-500",
+          dotColor: "bg-yellow-500",
+        }
+      : income === 0
       ? {
           title: "No Income",
           message: "Add income to begin tracking your financial status.",
