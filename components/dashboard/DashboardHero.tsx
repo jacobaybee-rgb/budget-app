@@ -4,20 +4,25 @@ import { useState } from "react";
 import { Bell, CalendarDays } from "lucide-react";
 import CommandCenterHeader from "@/components/dashboard/CommandCenterHeader";
 import FinancialCalendar from "@/components/dashboard/FinancialCalendar";
+import NotificationCenter from "@/components/dashboard/NotificationCenter";
 import MonthSelector from "@/components/budget/MonthSelector";
 import { getTimeTheme } from "@/lib/timeTheme";
 import type { FinancialStatus } from "@/lib/dashboard";
+import type { AppNotification } from "@/types/notification";
 
 type DashboardHeroProps = {
-  notificationCount?: number;
   financialStatus: FinancialStatus;
+  notifications: AppNotification[];
 };
 
 export default function DashboardHero({
-  notificationCount = 0,
   financialStatus,
+  notifications,
 }: DashboardHeroProps) {
   const [isCalendarOpen, setIsCalendarOpen] =
+    useState(false);
+
+  const [isNotificationCenterOpen, setIsNotificationCenterOpen] =
     useState(false);
 
   const currentMonthYear = new Date().toLocaleDateString(
@@ -40,7 +45,6 @@ export default function DashboardHero({
         }}
       >
         <div className="relative min-h-[560px] px-8 pb-44 pt-24 sm:px-14 md:min-h-[620px] md:pb-52 md:pt-16 2xl:min-h-[680px]">
-          {/* Calendar and notifications */}
           <div className="relative z-30 mb-8 flex justify-end gap-2 pl-12 md:absolute md:right-8 md:top-12 md:mb-0 md:pl-0">
             <button
               type="button"
@@ -59,15 +63,18 @@ export default function DashboardHero({
             <button
               type="button"
               onClick={() =>
-                alert("Notifications coming soon!")
+                setIsNotificationCenterOpen(true)
               }
-              className="relative rounded-xl border border-white/15 bg-black/45 px-4 py-3 text-white shadow-lg backdrop-blur-md transition hover:bg-black/60"
+              aria-label={`Open notifications. ${notifications.length} active.`}
+              className="relative rounded-xl border border-white/15 bg-black/45 px-4 py-3 text-white shadow-lg backdrop-blur-md transition hover:border-blue-300/40 hover:bg-black/60"
             >
               <Bell className="h-5 w-5" />
 
-              {notificationCount > 0 && (
-                <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold">
-                  {notificationCount}
+              {notifications.length > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
+                  {notifications.length > 99
+                    ? "99+"
+                    : notifications.length}
                 </span>
               )}
             </button>
@@ -83,7 +90,6 @@ export default function DashboardHero({
             <MonthSelector />
           </div>
 
-          {/* Financial status */}
           <div className="relative z-20 mt-8 w-full max-w-sm rounded-2xl border border-white/15 bg-black/50 p-6 shadow-xl backdrop-blur-md 2xl:absolute 2xl:right-8 2xl:top-24 2xl:mt-0 2xl:w-80">
             <p className="text-sm font-semibold text-zinc-300">
               Financial Status
@@ -111,6 +117,14 @@ export default function DashboardHero({
       <FinancialCalendar
         isOpen={isCalendarOpen}
         onClose={() => setIsCalendarOpen(false)}
+      />
+
+      <NotificationCenter
+        isOpen={isNotificationCenterOpen}
+        onClose={() =>
+          setIsNotificationCenterOpen(false)
+        }
+        notifications={notifications}
       />
     </>
   );

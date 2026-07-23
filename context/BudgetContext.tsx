@@ -16,6 +16,15 @@ import type {
   IncomeTemplate,
 } from "@/types/income";
 import type { Transaction } from "@/types/transaction";
+import {
+  defaultNotificationPreferences,
+  type NotificationPreferences,
+} from "@/types/notification";
+
+import {
+  getNotificationPreferences,
+  updateNotificationPreferences,
+} from "@/lib/database/notificationPreferences";
 
 type BudgetContextType = {
   categories: Category[];
@@ -33,6 +42,7 @@ type BudgetContextType = {
   carryoverReceived: number;
   savingsBalance: number;
   isBudgetLoading: boolean;
+  notificationPreferences: NotificationPreferences;
   goToPreviousMonth: () => void;
   goToNextMonth: () => void;
   goToCurrentMonth: () => void;
@@ -66,6 +76,10 @@ type BudgetContextType = {
 
   closeBudgetMonth: (
     allocations: MonthEndAllocationInput[]
+  ) => Promise<void>;
+
+  saveNotificationPreferences: (
+    preferences: NotificationPreferences
   ) => Promise<void>;
 };
 
@@ -213,7 +227,12 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
 
   const [savingsBalance, setSavingsBalance] = useState(0);
   const [isBudgetLoading, setIsBudgetLoading] = useState(true);
-
+  const [
+    notificationPreferences,
+    setNotificationPreferences,
+  ] = useState<NotificationPreferences>(
+    defaultNotificationPreferences
+  );
 
   useEffect(() => {
     let isCancelled = false;
@@ -674,6 +693,12 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         };
       });
 
+      const loadedNotificationPreferences =
+        await getNotificationPreferences(
+          supabase,
+          user.id
+        );
+
       const loadedGoals: Goal[] = (
         goalsResult.data ?? []
       ).map((goal) => ({
@@ -722,6 +747,9 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         );
         setGoals(loadedGoals);
         setIsBudgetLoading(false);
+        setNotificationPreferences(
+          loadedNotificationPreferences
+        );
       }
     }
 
@@ -1986,6 +2014,38 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  async function saveNotificationPreferences(
+    preferences: NotificationPreferences
+  ) {
+    try {
+      const userId = await getCurrentUserId();
+
+      const updatedPreferences =
+        await updateNotificationPreferences(
+          supabase,
+          userId,
+          preferences
+        );
+
+      setNotificationPreferences(
+        updatedPreferences
+      );
+    } catch (error) {
+      console.error(
+        "Unable to save notification preferences:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to save notification preferences."
+      );
+
+      throw error;
+    }
+  }
+
   async function deleteGoal(id: string) {
     try {
       const userId = await getCurrentUserId();
@@ -2032,6 +2092,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
         carryoverReceived,
         savingsBalance,
         isBudgetLoading,
+        notificationPreferences,
         goToPreviousMonth,
         goToNextMonth,
         goToCurrentMonth,
@@ -2056,6 +2117,7 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
 
         toggleBillPaid,
         closeBudgetMonth,
+        saveNotificationPreferences,
       }}
     >
       {children}

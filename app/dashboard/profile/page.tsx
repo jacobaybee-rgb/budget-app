@@ -17,6 +17,7 @@ import {
   updateProfile,
   type Profile,
 } from "@/lib/database/profiles";
+import NotificationSettings from "@/components/profile/NotificationSettings";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -393,6 +394,8 @@ export default function ProfilePage() {
           </button>
         </div>
       </form>
+
+      <NotificationSettings />
 
       <section className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-6">
         <div className="flex items-center gap-3">
